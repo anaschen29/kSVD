@@ -93,6 +93,16 @@ Procrustes invariance, tied-cutoff geometry, and one-step certified descent.
 Phase 1 core and its deterministic tests are implemented. No scientific sweep
 was run. Validation commands and outcomes:
 
+- 2026-07-27 follow-up: added root `README.md` setup instructions for standard
+  `venv`/pip and `uv`, dependency requirements, installation verification,
+  complete and targeted pytest invocations, and the syntax-only check.
+- 2026-07-27 validation follow-up: an external PyTorch run reported 14 passing
+  tests and exposed cancellation in the tied-family metric: subtracting two
+  nearly equal projector traces produced an `O(eps)` squared residual and an
+  `O(sqrt(eps))` distance. Replaced those trace differences with direct
+  orthogonal residual norms, preserving the formula while making its zero set
+  numerically stable.
+
 - `python -m pytest`: failed during collection because the base Python 3.14
   environment has no `torch` module.
 - `uv venv --python /usr/bin/python3 .venv && uv pip install --python

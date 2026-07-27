@@ -56,8 +56,14 @@ def tied_optimal_family_distance(problem: SpectralProblem, x: Tensor, k: int) ->
     cutoff = problem.eigenvalues[k - 1]
     above = problem.eigenvectors[:, problem.eigenvalues > cutoff]
     eligible = problem.eigenvectors[:, problem.eigenvalues >= cutoff]
-    missing = torch.tensor(0.0, dtype=x.dtype, device=x.device)
+    # Compute residuals directly instead of subtracting nearly equal projector
+    # traces.  The trace formulas are mathematically equivalent, but at an
+    # optimal family member they can leave an O(eps) positive remainder whose
+    # square root is only O(sqrt(eps)).
+    missing = torch.zeros((), dtype=x.dtype, device=x.device)
     if above.shape[1]:
-        missing = above.shape[1] - torch.sum((above.T @ q).square())
-    outside = k - torch.sum((eligible.T @ q).square())
-    return torch.sqrt(torch.clamp(missing + outside, min=0.0))
+        mandatory_residual = above - q @ (q.T @ above)
+        missing = torch.sum(mandatory_residual.square())
+    eligible_residual = q - eligible @ (eligible.T @ q)
+    outside = torch.sum(eligible_residual.square())
+    return torch.sqrt(missing + outside)
