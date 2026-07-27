@@ -70,6 +70,12 @@ the paper.
 
 For k = r, there are no cross-subspace modes. The normal linear factor is
 
+The authoritative derivation of the certified sublevel constants is in:
+
+- `docs/preconditioned_gd_convergence.tex`
+- Section: “A sufficient step-size bound”
+- Equations defining \(S_C,a_C,\Gamma_C,\mathcal L_C,d_C,\eta_C\)
+
     |1 - 2 eta|.
 
 At eta = 1/2, convergence to the minimizer manifold is locally quadratic.
