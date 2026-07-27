@@ -1,0 +1,1279 @@
+
+\documentclass[11pt]{article}
+
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb,amsthm,mathtools}
+\usepackage{bm}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage{hyperref}
+
+\newcommand{\RR}{\mathbb{R}}
+\newcommand{\rank}{\operatorname{rank}}
+\newcommand{\range}{\operatorname{range}}
+\newcommand{\col}{\operatorname{col}}
+\newcommand{\tr}{\operatorname{tr}}
+\newcommand{\diag}{\operatorname{diag}}
+\newcommand{\Span}{\operatorname{span}}
+\newcommand{\cD}{\mathcal{D}}
+\newcommand{\cE}{\mathcal{E}}
+\newcommand{\cS}{\mathcal{S}}
+\newcommand{\cK}{\mathcal{K}}
+\newcommand{\cU}{\mathcal{U}}
+\newcommand{\sol}[1]{\textcolor{red}{\textbf{[Sol: #1]}}}
+
+\newtheorem{theorem}{Theorem}
+\newtheorem{lemma}{Lemma}
+\newtheorem{proposition}{Proposition}
+\newtheorem{corollary}{Corollary}
+\newtheorem{remark}{Remark}
+\newtheorem{definition}{Definition}
+
+\title{Almost-Global Convergence of Preconditioned Gradient Descent for Low-Rank PSD Approximation}
+\author{}
+\date{}
+
+\begin{document}
+
+\maketitle
+
+\section{Problem setup}
+
+Let
+\[
+M\in\RR^{n\times n}
+\]
+be symmetric, and consider
+\[
+g(X)
+=
+\frac14\left\|M-XX^\top\right\|_F^2,
+\qquad
+X\in\RR^{n\times k},
+\]
+where \(k\le n\). We study the preconditioned gradient descent iteration
+\[
+X_{t+1}
+=
+X_t
+-
+\eta \nabla g(X_t)(X_t^\top X_t)^{-1}.
+\]
+
+The desired conclusion cannot hold for an arbitrary indefinite symmetric matrix.
+We therefore assume throughout that
+\[
+M\succeq 0,
+\qquad
+k\le \rank(M).
+\]
+Under these assumptions, minimizing \(g\) recovers the rank-\(k\) truncated
+eigendecomposition of \(M\), equivalently its rank-\(k\) singular value
+decomposition.
+
+Let
+\[
+\cS:=\range(M),
+\qquad
+r:=\rank(M),
+\]
+and define the full-rank support domain
+\[
+\cD_M
+:=
+\left\{
+X\in \cS^{\times k}:\rank(X)=k
+\right\}.
+\]
+For \(X\in\cD_M\), define
+\[
+\Phi(X)
+:=
+\frac12\tr(X^\top M^\dagger X)
+-
+\frac12\log\det(X^\top X).
+\]
+
+\section{Main results}
+
+\begin{theorem}[Uniform almost-global convergence on a potential sublevel]
+\label{thm:main}
+Suppose that \(M\succeq0\) has rank \(r\ge k\), with positive spectral
+decomposition
+\[
+M
+=
+U_r\Lambda U_r^\top,
+\qquad
+\Lambda
+=
+\diag(\lambda_1,\ldots,\lambda_r),
+\qquad
+\lambda_1\ge\cdots\ge\lambda_r>0.
+\]
+For \(C\in\RR\), let
+\[
+\cK_C^X
+:=
+\left\{
+X\in\cD_M:\Phi(X)\le C
+\right\},
+\]
+and assume \(\cK_C^X\neq\varnothing\).
+
+There exists
+\[
+\eta_C=\eta_C(M,k,C)>0
+\]
+such that, for every fixed \(0<\eta<\eta_C\), the following statements hold.
+
+\begin{enumerate}[label=(\roman*)]
+    \item For every \(X_0\in\cK_C^X\), all iterates are well-defined,
+    remain full column rank, stay in \(\cK_C^X\), and converge to a critical
+    point of \(g\).
+
+    \item For Lebesgue-almost every \(X_0\in\cK_C^X\), the limit is a global
+    minimizer. More precisely,
+    \[
+    X_t\longrightarrow
+    X_\infty
+    =
+    U_\star\Lambda_\star^{1/2}R,
+    \qquad
+    R\in O(k),
+    \]
+    where \(U_\star\) spans a top-\(k\) invariant subspace of \(M\). Hence
+    \[
+    X_\infty X_\infty^\top
+    =
+    U_\star\Lambda_\star U_\star^\top
+    \]
+    is a best rank-\(k\) approximation of \(M\), and
+    \[
+    g(X_\infty)
+    =
+    \frac14\sum_{i=k+1}^r\lambda_i^2.
+    \]
+\end{enumerate}
+
+Here, ``almost every'' is with respect to the \(rk\)-dimensional Lebesgue
+measure on
+\[
+\cS^{\times k}\cong\RR^{r\times k}.
+\]
+If \(M\succ0\), this is the ordinary ambient Lebesgue measure on
+\(\RR^{n\times k}\). If, additionally,
+\[
+\lambda_k>\lambda_{k+1},
+\qquad
+\lambda_{r+1}:=0,
+\]
+then
+\[
+\col(X_t)
+\longrightarrow
+\Span(u_1,\ldots,u_k).
+\]
+\end{theorem}
+
+\sol{The theorem is uniform over a prescribed potential sublevel. The proof does not establish one initialization-independent fixed step size on the entire unbounded full-rank domain.}
+
+\begin{corollary}[Almost every initialization with an energy-selected fixed step]
+\label{cor:shell}
+For every integer \(j\) for which
+\[
+\cE_j
+:=
+\left\{
+X\in\cD_M:j-1<\Phi(X)\le j
+\right\}
+\]
+is nonempty, let \(\overline\eta_j>0\) be any valid threshold supplied by
+Theorem~\ref{thm:main} with \(C=j\), and choose once and for all
+\[
+0<\eta_j<\overline\eta_j.
+\]
+
+Given \(X_0\in\cE_j\), run the iteration with the single fixed step size
+\(\eta=\eta_j\). Then the algorithm converges to a global minimizer for
+Lebesgue-almost every \(X_0\in\cD_M\).
+\end{corollary}
+
+\begin{proof}
+On each shell \(\cE_j\), the exceptional set has measure zero by
+Theorem~\ref{thm:main}. The domain \(\cD_M\) is the countable union of the
+shells \(\cE_j\), and a countable union of measure-zero sets has measure zero.
+\end{proof}
+
+\sol{When \(M\) is singular, this is a relative-measure statement on \(\range(M)^{\times k}\), not an ambient almost-everywhere statement in \(\RR^{n\times k}\). A practical random initialization is given in Section~\ref{sec:singular-init}.}
+
+\section{Rewriting the iteration}
+
+We first compute the gradient of \(g\).
+
+\begin{lemma}
+For every \(X\in\RR^{n\times k}\),
+\[
+\nabla g(X)
+=
+(XX^\top-M)X
+=
+X(X^\top X)-MX.
+\]
+\end{lemma}
+
+\begin{proof}
+Expanding the objective gives
+\[
+g(X)
+=
+\frac14\tr(M^2)
+-
+\frac12\tr(X^\top MX)
++
+\frac14\tr\bigl((X^\top X)^2\bigr).
+\]
+Because \(M\) is symmetric,
+\[
+\nabla_X\left(-\frac12\tr(X^\top MX)\right)
+=
+-MX,
+\]
+while
+\[
+\nabla_X\left(\frac14\tr\bigl((X^\top X)^2\bigr)\right)
+=
+X(X^\top X).
+\]
+Combining the two identities proves the claim.
+\end{proof}
+
+It follows that
+\[
+\nabla g(X)(X^\top X)^{-1}
+=
+X-MX(X^\top X)^{-1},
+\]
+so the iteration may be written as
+\[
+X_{t+1}
+=
+(1-\eta)X_t
++
+\eta MX_t(X_t^\top X_t)^{-1}.
+\tag{1}
+\label{eq:x-update}
+\]
+Equation~\eqref{eq:x-update} shows that if the columns of \(X_0\) lie in
+\(\range(M)\), then the same is true for every \(X_t\).
+
+Recall the positive spectral decomposition
+\[
+M=U_r\Lambda U_r^\top,
+\qquad
+\Lambda=\diag(\lambda_1,\ldots,\lambda_r)\succ0.
+\]
+Since \(X_t\in\range(M)^{\times k}\), there is a unique
+\(\overline X_t\in\RR^{r\times k}\) such that
+\[
+X_t=U_r\overline X_t,
+\qquad
+\overline X_t=U_r^\top X_t.
+\]
+Because \(U_r^\top U_r=I_r\), the objective, potential, and iteration reduce to
+\[
+g(U_r\overline X)
+=
+\frac14
+\left\|
+\Lambda-\overline X\overline X^\top
+\right\|_F^2,
+\]
+\[
+\Phi(U_r\overline X)
+=
+\frac12\tr(\overline X^\top\Lambda^{-1}\overline X)
+-
+\frac12\log\det(\overline X^\top\overline X),
+\]
+and
+\[
+\overline X_{t+1}
+=
+(1-\eta)\overline X_t
++
+\eta\Lambda\overline X_t
+(\overline X_t^\top\overline X_t)^{-1}.
+\]
+Here \(\Lambda\in\RR^{r\times r}\) is positive definite even when the original
+ambient matrix \(M\in\RR^{n\times n}\) is singular. From this point until
+Section~\ref{sec:translation-back}, the proof is carried out entirely in the
+reduced coordinates \(\RR^{r\times k}\), and all inverses and inverse square
+roots are applied to \(\Lambda\), not to the possibly singular ambient matrix
+\(M\).
+
+\section{A hidden log-determinant potential}
+
+On
+\[
+\cD
+:=
+\left\{
+\overline X\in\RR^{r\times k}:\rank(\overline X)=k
+\right\},
+\]
+define the reduced potential
+\[
+\overline\Phi(\overline X)
+:=
+\frac12\tr(\overline X^\top\Lambda^{-1}\overline X)
+-
+\frac12\log\det(\overline X^\top\overline X).
+\]
+By the preceding reduction,
+\[
+\overline\Phi(\overline X)=\Phi(U_r\overline X).
+\]
+Its Euclidean gradient is
+\[
+\nabla\overline\Phi(\overline X)
+=
+\Lambda^{-1}\overline X
+-
+\overline X(\overline X^\top\overline X)^{-1},
+\]
+and therefore
+\[
+\Lambda\nabla\overline\Phi(\overline X)
+=
+\overline X
+-
+\Lambda\overline X(\overline X^\top\overline X)^{-1}.
+\]
+Consequently, the reduced iteration is gradient descent on
+\(\overline\Phi\) with respect to the fixed inner product
+\[
+\langle A,B\rangle_{\Lambda^{-1}}
+:=
+\tr(A^\top\Lambda^{-1}B).
+\]
+
+For an ordinary Euclidean formulation, set
+\[
+\overline X=\Lambda^{1/2}Y,
+\qquad
+Y=\Lambda^{-1/2}\overline X,
+\]
+and define
+\[
+F(Y)
+:=
+\overline\Phi(\Lambda^{1/2}Y)
+=
+\frac12\|Y\|_F^2
+-
+\frac12\log\det(Y^\top\Lambda Y).
+\tag{2}
+\label{eq:F-def}
+\]
+Let
+\[
+A(Y):=Y^\top\Lambda Y.
+\]
+Differentiating gives
+\[
+\nabla F(Y)
+=
+Y-\Lambda YA(Y)^{-1}.
+\tag{3}
+\label{eq:F-grad}
+\]
+Substituting \(\overline X=\Lambda^{1/2}Y\) into the reduced iteration yields
+\[
+Y_{t+1}
+=
+Y_t-\eta\nabla F(Y_t).
+\tag{4}
+\label{eq:Y-update}
+\]
+Thus the preconditioned method in the reduced variable \(\overline X\) is
+exactly ordinary Euclidean gradient descent on the real-analytic function
+\(F\).
+
+\begin{lemma}[Full-rank preservation]
+\label{lem:rank-preservation}
+If \(Y\) has full column rank and \(0<\eta\le1\), then
+\[
+Y_+
+:=(1-\eta)Y+\eta\Lambda Y(Y^\top\Lambda Y)^{-1}
+\]
+also has full column rank.
+\end{lemma}
+
+\begin{proof}
+We have
+\[
+Y^\top Y_+
+=
+(1-\eta)Y^\top Y+\eta I_k\succ0.
+\]
+If \(Y_+z=0\), then
+\[
+0
+=
+z^\top Y^\top Y_+z
+=
+z^\top\bigl((1-\eta)Y^\top Y+\eta I_k\bigr)z,
+\]
+which forces \(z=0\). Therefore \(Y_+\) has trivial kernel.
+\end{proof}
+
+\section{Compactness of sublevel sets}
+
+For \(C\in\RR\), define
+\[
+\cK_C
+:=
+\left\{
+Y\in\cD:F(Y)\le C
+\right\}.
+\]
+
+\begin{lemma}[Coercivity and a barrier at rank deficiency]
+\label{lem:coercivity}
+Every nonempty sublevel set \(\cK_C\) is compact in
+\(\RR^{r\times k}\) and is contained a positive distance from the rank-deficient
+boundary of \(\cD\).
+\end{lemma}
+
+\begin{proof}
+If a bounded sequence \(Y_m\in\cD\) approaches rank deficiency, then
+\[
+\det(Y_m^\top\Lambda Y_m)\longrightarrow0,
+\]
+and hence \(F(Y_m)\to+\infty\).
+
+It remains to rule out escape to infinity. Let
+\[
+L:=\lambda_1(\Lambda)=\lambda_1(M),
+\qquad
+s:=\|Y\|_F^2.
+\]
+By the arithmetic--geometric mean inequality,
+\[
+\det(Y^\top\Lambda Y)
+\le
+\left(
+\frac{\tr(Y^\top\Lambda Y)}{k}
+\right)^k
+\le
+\left(\frac{Ls}{k}\right)^k.
+\]
+Therefore
+\[
+F(Y)
+\ge
+\frac{s}{2}
+-
+\frac{k}{2}\log\left(\frac{Ls}{k}\right),
+\tag{5}
+\label{eq:coercive-lower}
+\]
+and the right-hand side tends to \(+\infty\) as \(s\to\infty\).
+
+Thus \(\cK_C\) is bounded. If \(Y_m\in\cK_C\) converges in the ambient
+Euclidean space, the barrier argument prevents its limit from being rank
+deficient; continuity of \(F\) then shows that the limit remains in \(\cK_C\).
+Hence \(\cK_C\) is closed and bounded, and therefore compact.
+\end{proof}
+
+In particular, there exist constants
+\[
+0<\delta_C<R_C<\infty
+\]
+such that
+\[
+\sigma_{\min}(Y)\ge\delta_C,
+\qquad
+\|Y\|_F\le R_C
+\]
+for every \(Y\in\cK_C\). This replaces any need for a translated cone, slab,
+or local-neighborhood assumption.
+
+\section{A sufficient step-size bound}
+
+Assume \(\cK_C\neq\varnothing\). Define
+\[
+S_C
+:=
+\max\left\{
+s>0:
+\frac{s}{2}
+-
+\frac{k}{2}\log\left(\frac{Ls}{k}\right)
+\le C
+\right\}.
+\tag{6}
+\label{eq:S-C}
+\]
+By \eqref{eq:coercive-lower},
+\[
+\|Y\|_F^2\le S_C
+\]
+for every \(Y\in\cK_C\).
+
+From
+\[
+F(Y)
+=
+\frac12\|Y\|_F^2
+-
+\frac12\log\det A(Y),
+\]
+we obtain
+\[
+\det A(Y)
+=
+\exp\bigl(\|Y\|_F^2-2F(Y)\bigr)
+\ge
+e^{-2C}.
+\]
+Also,
+\[
+\lambda_{\max}(A(Y))
+\le
+L\|Y\|_F^2
+\le
+LS_C.
+\]
+Therefore
+\[
+\lambda_{\min}(A(Y))
+\ge
+a_C
+:=
+\frac{e^{-2C}}{(LS_C)^{k-1}}.
+\tag{7}
+\label{eq:a-C}
+\]
+
+Using \eqref{eq:F-grad}, on \(\cK_C\) we have
+\[
+\|\nabla F(Y)\|_F
+\le
+\sqrt{S_C}
+\left(
+1+\frac{L}{a_C}
+\right)
+=:
+\Gamma_C.
+\tag{8}
+\label{eq:Gamma-C}
+\]
+The Hessian action is
+\[
+D\nabla F(Y)[H]
+=
+H-\Lambda H A^{-1}
++
+\Lambda Y A^{-1}
+\left(
+H^\top\Lambda Y+Y^\top\Lambda H
+\right)
+A^{-1},
+\tag{9}
+\label{eq:F-Hessian}
+\]
+where \(A=A(Y)\). Whenever
+\[
+\|Y\|_F<\sqrt{S_C}+1,
+\qquad
+\lambda_{\min}(A(Y))>\frac{a_C}{2},
+\]
+we may take
+\[
+\|D\nabla F(Y)\|_{\mathrm{op}}
+\le
+\mathcal L_C,
+\]
+where
+\[
+\mathcal L_C
+:=
+1
++
+\frac{2L}{a_C}
++
+\frac{8L^2(\sqrt{S_C}+1)^2}{a_C^2}.
+\tag{10}
+\label{eq:L-C}
+\]
+
+Define
+\[
+d_C
+:=
+\min\left\{
+1,
+\frac{a_C}{4L(\sqrt{S_C}+1)}
+\right\},
+\tag{11}
+\label{eq:d-C}
+\]
+and choose
+\[
+0<\eta<\eta_C,
+\qquad
+\eta_C
+:=
+\min\left\{
+1,
+\frac{d_C}{\Gamma_C},
+\frac{1}{\mathcal L_C}
+\right\}.
+\tag{12}
+\label{eq:eta-C}
+\]
+
+Let
+\[
+\Delta=-\eta\nabla F(Y).
+\]
+For \(Y\in\cK_C\), \eqref{eq:Gamma-C} gives
+\[
+\|\Delta\|_F<d_C.
+\]
+For every \(s\in[0,1]\),
+\[
+A(Y+s\Delta)-A(Y)
+=
+s\Delta^\top\Lambda Y
++
+sY^\top\Lambda\Delta
++
+s^2\Delta^\top\Lambda\Delta.
+\]
+Hence
+\[
+\|A(Y+s\Delta)-A(Y)\|_2
+\le
+2L\sqrt{S_C}\,d_C+Ld_C^2
+\le
+\frac{a_C}{2}.
+\]
+The entire update segment remains full rank and lies in the region where the
+Hessian is bounded by \(\mathcal L_C\). Taylor's theorem therefore gives
+\[
+\begin{aligned}
+F(Y-\eta\nabla F(Y))
+&\le
+F(Y)
+-
+\eta\|\nabla F(Y)\|_F^2
++
+\frac{\mathcal L_C\eta^2}{2}\|\nabla F(Y)\|_F^2\\
+&\le
+F(Y)
+-
+\frac{\eta}{2}\|\nabla F(Y)\|_F^2.
+\end{aligned}
+\tag{13}
+\label{eq:descent}
+\]
+Consequently,
+\[
+F(Y_{t+1})\le F(Y_t)\le F(Y_0)\le C,
+\]
+so every iterate remains in \(\cK_C\).
+
+\section{Convergence to a critical point}
+
+Summing \eqref{eq:descent} gives
+\[
+\frac{\eta}{2}
+\sum_{t=0}^\infty
+\|\nabla F(Y_t)\|_F^2
+\le
+F(Y_0)-\inf F
+<\infty.
+\]
+Therefore
+\[
+\|\nabla F(Y_t)\|_F\longrightarrow0.
+\tag{14}
+\label{eq:grad-to-zero}
+\]
+Moreover,
+\[
+Y_{t+1}-Y_t
+=
+-\eta\nabla F(Y_t),
+\tag{15}
+\label{eq:relative-error}
+\]
+and \eqref{eq:descent} can be rewritten as
+\[
+F(Y_t)-F(Y_{t+1})
+\ge
+\frac{1}{2\eta}\|Y_{t+1}-Y_t\|_F^2.
+\tag{16}
+\label{eq:strong-descent}
+\]
+
+The sequence lies in the compact set \(\cK_C\), and every cluster point is
+critical by \eqref{eq:grad-to-zero}. Since \(F\) is real analytic on the
+full-rank domain, the discrete \L{}ojasiewicz convergence theorem, applied
+using \eqref{eq:relative-error} and \eqref{eq:strong-descent}, yields
+\[
+\sum_{t=0}^\infty
+\|Y_{t+1}-Y_t\|_F
+<
+\infty.
+\]
+Thus \(Y_t\) converges to a single critical point.
+
+\sol{The previous version invoked \L{}ojasiewicz convergence without displaying the required descent and relative-error hypotheses. They are now explicit; Appendix~\ref{app:loj} records the precise external theorem being used.}
+
+\section{Characterization of all critical points}
+
+\begin{proposition}
+\label{prop:critical-points}
+A full-column-rank matrix \(Y\) is a critical point of \(F\) if and only if
+\begin{enumerate}[label=(\roman*)]
+    \item \(Y^\top Y=I_k\), and
+    \item \(\col(Y)\) is an invariant subspace of \(\Lambda\).
+\end{enumerate}
+\end{proposition}
+
+\begin{proof}
+At a critical point,
+\[
+Y-\Lambda Y(Y^\top\Lambda Y)^{-1}=0.
+\]
+Let
+\[
+A:=Y^\top\Lambda Y.
+\]
+Then
+\[
+\Lambda Y=YA.
+\tag{17}
+\label{eq:invariance}
+\]
+Multiplying the critical-point equation on the left by \(Y^\top\) gives
+\[
+Y^\top Y
+=
+Y^\top\Lambda Y\,A^{-1}
+=
+I_k.
+\tag{18}
+\label{eq:orthonormal}
+\]
+Thus \(Y\) has orthonormal columns and \(\col(Y)\) is invariant under \(\Lambda\).
+
+Conversely, suppose that \(Y^\top Y=I_k\) and that \(\Lambda Y=YA\) for some
+symmetric \(A\in\RR^{k\times k}\). Then \(Y^\top\Lambda Y=A\), and hence
+\[
+\Lambda Y(Y^\top\Lambda Y)^{-1}
+=
+YAA^{-1}
+=
+Y.
+\]
+Therefore \(\nabla F(Y)=0\).
+\end{proof}
+
+\begin{lemma}[Right-orthogonal eigenbasis reduction]
+\label{lem:eigenbasis-rotation}
+Let \(Y\) be a critical point. There exists \(R\in O(k)\) such that the
+columns of \(YR\) are eigenvectors of \(\Lambda\). Moreover,
+\[
+F(YR)=F(Y),
+\]
+and the Hessians at \(Y\) and \(YR\) have the same inertia.
+\end{lemma}
+
+\begin{proof}
+At a critical point, \(\Lambda Y=YA\), where \(A=Y^\top\Lambda Y\) is symmetric positive
+definite. Choose \(R\in O(k)\) such that
+\[
+R^\top AR=\diag(\mu_1,\ldots,\mu_k).
+\]
+Then
+\[
+\Lambda(YR)
+=
+YR\diag(\mu_1,\ldots,\mu_k),
+\]
+so the columns of \(YR\) are eigenvectors. Right-orthogonal invariance follows
+from
+\[
+\|YR\|_F=\|Y\|_F,
+\qquad
+\det(R^\top Y^\top\Lambda YR)=\det(Y^\top\Lambda Y).
+\]
+Because the map \(H\mapsto HR\) is an isometry and \(F(\cdot R)=F(\cdot)\),
+the Hessian quadratic forms are related by this isometry and therefore have
+the same inertia.
+\end{proof}
+
+Suppose that a critical invariant subspace corresponds to eigenvalues
+\[
+\mu_1,\ldots,\mu_k.
+\]
+Then
+\[
+F(Y)
+=
+\frac{k}{2}
+-
+\frac12\sum_{i=1}^k\log\mu_i.
+\tag{19}
+\label{eq:critical-value}
+\]
+Therefore the global minima are precisely the invariant subspaces selecting
+the \(k\) largest eigenvalues of \(\Lambda\).
+
+\section{Nonglobal critical points are strict saddles}
+
+\begin{proposition}
+\label{prop:strict-saddle}
+Every nonglobal critical point of \(F\) has a direction of strictly negative
+curvature.
+\end{proposition}
+
+\begin{proof}
+Let \(Y\) be a nonglobal critical point. By
+Lemma~\ref{lem:eigenbasis-rotation}, after a right-orthogonal rotation we may
+assume that the columns of \(Y\) are orthonormal eigenvectors of \(\Lambda\).
+
+Because the selected invariant subspace is not globally optimal, there exists
+a selected eigenvector \(u\in\col(Y)\) and an unselected eigenvector
+\(v\perp\col(Y)\) such that
+\[
+\Lambda u=\alpha u,
+\qquad
+\Lambda v=\beta v,
+\qquad
+\beta>\alpha.
+\]
+Assume that \(u\) is the \(i\)-th column of \(Y\), and define
+\[
+H:=ve_i^\top.
+\]
+The second variation of \(F\) is
+\[
+\begin{aligned}
+\nabla^2F(Y)[H,H]
+={}&
+\|H\|_F^2
+-
+\tr\left(A^{-1}H^\top\Lambda H\right)\\
+&+
+\frac12
+\tr\left[
+A^{-1}
+\left(H^\top\Lambda Y+Y^\top\Lambda H\right)
+A^{-1}
+\left(H^\top\Lambda Y+Y^\top\Lambda H\right)
+\right],
+\end{aligned}
+\tag{20}
+\label{eq:second-variation}
+\]
+where \(A=Y^\top\Lambda Y\). Since \(v\perp\col(Y)\),
+\[
+H^\top\Lambda Y=0,
+\qquad
+Y^\top\Lambda H=0.
+\]
+Also,
+\[
+H^\top\Lambda H=\beta e_ie_i^\top,
+\]
+and the \(i\)-th diagonal entry of \(A\) is \(\alpha\). Therefore
+\[
+\nabla^2F(Y)[H,H]
+=
+1-\frac{\beta}{\alpha}
+<0.
+\]
+Hence \(Y\) is a strict saddle.
+\end{proof}
+
+No eigengap assumption is required for Proposition~\ref{prop:strict-saddle}.
+If the \(k\)-th eigenvalue is repeated, every admissible \(k\)-dimensional
+choice within the tied top eigenspace is itself a global minimizer.
+
+\section{Almost-sure avoidance of strict saddles}
+
+Let
+\[
+T_\eta(Y)
+:=
+Y-\eta\nabla F(Y).
+\]
+The compact sublevel \(\cK_C\) lies in the open set
+\[
+\cU_C
+:=
+\left\{
+Y:\|Y\|_F<\sqrt{S_C}+1,
+\ \lambda_{\min}(Y^\top\Lambda Y)>\frac{a_C}{2}
+\right\},
+\]
+on which
+\[
+\|\nabla^2F(Y)\|_{\mathrm{op}}\le\mathcal L_C.
+\]
+Since \(\eta\mathcal L_C<1\),
+\[
+DT_\eta(Y)
+=
+I-\eta\nabla^2F(Y)
+\]
+is nonsingular throughout \(\cU_C\). Hence \(T_\eta\) is a local
+\(C^1\)-diffeomorphism there.
+
+At a strict saddle \(Y_s\), the Hessian has a negative eigenvalue
+\(-\gamma\), so \(DT_\eta(Y_s)\) has an eigenvalue
+\[
+1+\eta\gamma>1.
+\]
+The local center-stable manifold theorem therefore places all points whose
+forward trajectories remain sufficiently near \(Y_s\) in a manifold of
+dimension at most \(rk-1\), hence in a Lebesgue-null set. Using a countable
+cover of the strict-saddle set and the fact that local diffeomorphisms preserve
+nullity under inverse images, the basin of all strict saddles inside
+\(\cK_C\) is a countable union of null sets and is therefore null.
+
+Since every trajectory in \(\cK_C\) converges to a critical point and every
+nonglobal critical point is a strict saddle, almost every initialization in
+\(\cK_C\) converges to a global minimum of \(F\).
+
+\sol{The critical sets are generally non-isolated because \(Y\mapsto YR\) leaves \(F\) unchanged. Thus one must use the non-isolated center-stable argument, not only the simpler isolated-saddle theorem. Full details are in Appendix~\ref{app:saddles}.}
+
+\section{Translation back to the original objective}
+\label{sec:translation-back}
+
+The preceding sections analyzed the reduced variables
+\[
+X_t=U_r\overline X_t,
+\qquad
+\overline X_t=\Lambda^{1/2}Y_t.
+\]
+At a global minimum of the reduced potential,
+\[
+Y_\infty
+=
+E_\star R,
+\qquad
+R\in O(k),
+\]
+where \(E_\star\in\RR^{r\times k}\) has orthonormal columns spanning a
+top-\(k\) invariant subspace of \(\Lambda\). Writing
+\[
+\Lambda E_\star
+=
+E_\star\Lambda_\star,
+\]
+we obtain
+\[
+\overline X_\infty
+=
+\Lambda^{1/2}Y_\infty
+=
+E_\star\Lambda_\star^{1/2}R.
+\]
+Returning to the original ambient coordinates \(\RR^n\) gives
+\[
+\begin{aligned}
+X_\infty
+&=
+U_r\overline X_\infty\\
+&=
+U_rE_\star\Lambda_\star^{1/2}R\\
+&=
+U_\star\Lambda_\star^{1/2}R,
+\end{aligned}
+\]
+where
+\[
+U_\star:=U_rE_\star\in\RR^{n\times k}.
+\]
+Since
+\[
+M U_\star
+=
+U_r\Lambda E_\star
+=
+U_rE_\star\Lambda_\star
+=
+U_\star\Lambda_\star,
+\]
+the columns of \(U_\star\) span a top-\(k\) invariant subspace of the original
+ambient matrix \(M\). Consequently,
+\[
+X_\infty X_\infty^\top
+=
+U_\star\Lambda_\star U_\star^\top.
+\tag{21}
+\label{eq:truncated-M}
+\]
+By the Eckart--Young--Mirsky theorem,
+\[
+\min_{\rank(Z)\le k}\|M-Z\|_F^2
+=
+\sum_{i=k+1}^r\lambda_i^2.
+\]
+The optimal rank-\(k\) approximation is positive semidefinite and therefore
+can be written as \(XX^\top\). Thus
+\[
+\min_X g(X)
+=
+\frac14\sum_{i=k+1}^r\lambda_i^2,
+\]
+and \eqref{eq:truncated-M} is a global minimizer of \(g\).
+
+\section{Initialization for singular \texorpdfstring{\(M\)}{M}}
+\label{sec:singular-init}
+
+If \(M\) is singular, initialization inside \(\range(M)\) does not require
+knowing the leading eigenvectors. Draw
+\[
+\Omega\in\RR^{n\times k}
+\]
+from any distribution absolutely continuous with respect to ambient Lebesgue
+measure, and set
+\[
+X_0=M\Omega.
+\tag{22}
+\label{eq:random-init}
+\]
+Since \(k\le\rank(M)\),
+\[
+\rank(M\Omega)=k
+\]
+with probability one. The induced law of \(X_0\) is absolutely continuous with
+respect to the \(rk\)-dimensional Lebesgue measure on
+\(\range(M)^{\times k}\). Moreover, \(X_0\in\range(M)^{\times k}\), and this
+property is preserved by the iteration.
+
+For this initialization, the initial potential can be evaluated without
+forming \(M^\dagger\):
+\[
+\Phi(M\Omega)
+=
+\frac12\tr(\Omega^\top M\Omega)
+-
+\frac12\log\det(\Omega^\top M^2\Omega).
+\]
+Thus one may select a fixed step from the initial potential shell as in
+Corollary~\ref{cor:shell} without computing a leading eigenspace.
+
+\section{Conclusion}
+
+Under the natural assumptions
+\[
+M\succeq0,
+\qquad
+k\le\rank(M),
+\qquad
+X_0\in\range(M)^{\times k},
+\qquad
+\rank(X_0)=k,
+\]
+preconditioned gradient descent converges to a global minimizer for almost
+every initialization, provided the fixed step size is chosen uniformly on a
+bounded potential sublevel, or equivalently selected once from the initial
+potential shell. No translated-cone condition, slab condition, local
+initialization condition, or prior approximation to the leading eigenspace is
+required.
+
+\appendix
+
+\section{Audit notes and remaining scope}
+\label{app:audit}
+
+This appendix records the longer rigor checks underlying the short red comments
+in the main text.
+
+\subsection{What the fixed-step theorem does and does not prove}
+
+The proved quantifiers are
+\[
+\forall C\quad
+\exists\eta_C>0\quad
+\forall\eta\in(0,\eta_C):
+\quad
+\text{almost every }X_0\in\cK_C^X
+\text{ converges globally}.
+\]
+This is a uniform theorem on every prescribed potential sublevel. It does not,
+by itself, imply
+\[
+\exists\eta>0:
+\quad
+\text{almost every }X_0\in\cD_M
+\text{ converges globally with that same }\eta.
+\]
+The latter would require a global smoothness or invariant-region argument that
+is uniform as \(X_0\) approaches rank deficiency or infinity. The current
+proof does not provide such an argument.
+
+Corollary~\ref{cor:shell} nevertheless covers almost every point of the entire
+support domain: the step size is selected once from \(X_0\), then held fixed
+throughout the run. This is not a local spectral initialization assumption,
+because \(\Phi(X_0)\) controls scale and conditioning rather than angular
+closeness to the leading eigenspace.
+
+\subsection{Relative measure for singular matrices}
+
+If \(r<n\), then \(\range(M)^{\times k}\) has dimension \(rk<nk\), so it has
+ambient Lebesgue measure zero in \(\RR^{n\times k}\). Consequently, the correct
+claim is almost-everywhere convergence relative to the support. The random map
+\(\Omega\mapsto M\Omega\) provides a natural way to sample an absolutely
+continuous distribution on that support.
+
+\subsection{Why \texorpdfstring{\(M\succeq0\)}{positive semidefiniteness} is essential}
+
+For \(n=k=1\) and \(M=[-1]\),
+\[
+g(x)=\frac14(1+x^2)^2
+\]
+has unique minimizer \(x=0\), but the preconditioned update is
+\[
+x_{t+1}
+=
+(1-\eta)x_t-\frac{\eta}{x_t}.
+\]
+No nonzero trajectory can converge to zero because the last term diverges.
+Moreover, \(XX^\top\) is always positive semidefinite, so the objective does
+not represent the usual truncated SVD of an indefinite symmetric matrix.
+
+\subsection{Why the undamped step can fail}
+
+For \(n=k=1\), \(M=[\lambda]\), and \(\eta=1\),
+\[
+x_{t+1}=\frac{\lambda}{x_t}.
+\]
+Unless \(x_0^2=\lambda\), this is an exact two-cycle. Thus damping is not merely
+an artifact of the proof.
+
+\section{The discrete \L{}ojasiewicz step}
+\label{app:loj}
+
+A standard analytic-descent theorem states that if a bounded sequence
+\(z_t\) is generated for a real-analytic function \(f\) and satisfies, for
+fixed constants \(a,b>0\),
+\[
+f(z_t)-f(z_{t+1})
+\ge
+a\|z_{t+1}-z_t\|^2
+\]
+and
+\[
+\|\nabla f(z_t)\|
+\le
+b\|z_{t+1}-z_t\|,
+\]
+then the sequence has finite length and converges to a single critical point.
+In the present setting, \eqref{eq:strong-descent} gives
+\[
+a=\frac{1}{2\eta},
+\]
+while \eqref{eq:relative-error} gives the equality
+\[
+\|\nabla F(Y_t)\|_F
+=
+\frac1\eta\|Y_{t+1}-Y_t\|_F.
+\]
+The trajectory is bounded because it remains in the compact set \(\cK_C\),
+and \(F\) is real analytic there. Thus all hypotheses of the theorem are
+satisfied. See, for example, Absil, Mahony, and Andrews
+\cite{absil2005convergence}.
+
+\section{The non-isolated strict-saddle argument}
+\label{app:saddles}
+
+For completeness, we spell out the measure argument suppressed in the main
+text.
+
+Let \(d=rk\). For every strict saddle \(Y_s\), the derivative
+\(DT_\eta(Y_s)\) has an eigenvalue of modulus strictly larger than one. The
+local center-stable manifold theorem therefore provides neighborhoods
+\[
+V_s\Subset B_s
+\]
+and a local center-stable manifold \(W_s^{cs}\subset B_s\) of dimension at
+most \(d-1\) such that every point whose entire forward orbit remains in
+\(B_s\) lies in \(W_s^{cs}\). Hence \(W_s^{cs}\) has \(d\)-dimensional
+Lebesgue measure zero.
+
+Because \(\RR^{r\times k}\) is second countable, the strict-saddle set admits
+a countable subcover \(\{V_{s_j}\}_{j\ge1}\). If an orbit converges to a strict
+saddle \(Y_\infty\), then \(Y_\infty\in V_{s_j}\) for some \(j\), and for some
+integer \(N\),
+\[
+T_\eta^N(Y_0)\in W_{s_j}^{cs}.
+\]
+Thus the full strict-saddle basin is contained in
+\[
+\bigcup_{j=1}^{\infty}
+\bigcup_{N=0}^{\infty}
+T_\eta^{-N}(W_{s_j}^{cs}).
+\tag{23}
+\label{eq:saddle-basin-cover}
+\]
+
+It remains to justify that inverse images of null sets are null. On \(\cU_C\),
+\(T_\eta\) is a local \(C^1\)-diffeomorphism. Cover \(\cU_C\) by countably many
+inverse-function neighborhoods. After restricting to relatively compact
+subsets, each local inverse is Lipschitz, and Lipschitz maps send null sets to
+null sets. Therefore
+\[
+T_\eta^{-1}(N)\cap\cU_C
+\]
+is null whenever \(N\) is null. Iterating this observation shows that every
+set in \eqref{eq:saddle-basin-cover} is null. The basin is a countable union of
+null sets and is therefore null.
+
+The use of a non-isolated version is important: the right-orthogonal symmetry
+\(Y\mapsto YR\) creates continuous manifolds of critical points. See
+Panageas and Piliouras \cite{panageas2017nonisolated}; for the isolated case,
+see Lee et al.\ \cite{lee2016gradient}.
+
+\section{Conservativeness of the explicit step bound}
+
+The constants in \eqref{eq:eta-C} are designed to make the update segment stay
+inside an explicitly controlled full-rank neighborhood. They are sufficient,
+not sharp, and may be extremely small when the sublevel permits poorly
+conditioned matrices. Improving the practical step-size range is a separate
+quantitative problem and is not needed for the qualitative almost-global
+convergence theorem.
+
+\begin{thebibliography}{9}
+
+\bibitem{absil2005convergence}
+P.-A. Absil, R. Mahony, and B. Andrews.
+\newblock Convergence of the iterates of descent methods for analytic cost
+functions.
+\newblock \emph{SIAM Journal on Optimization}, 16(2):531--547, 2005.
+
+\bibitem{lee2016gradient}
+J. D. Lee, M. Simchowitz, M. I. Jordan, and B. Recht.
+\newblock Gradient descent only converges to minimizers.
+\newblock In \emph{Proceedings of the 29th Conference on Learning Theory},
+pages 1246--1257, 2016.
+
+\bibitem{panageas2017nonisolated}
+I. Panageas and G. Piliouras.
+\newblock Gradient descent only converges to minimizers: Non-isolated critical
+points and invariant regions.
+\newblock In \emph{8th Innovations in Theoretical Computer Science Conference},
+2017.
+
+\end{thebibliography}
+
+\end{document}
