@@ -63,8 +63,10 @@ generic trajectory containing the slowest normal mode.
 
 ## Certified sublevel step
 
-Include the exact definitions of S_C, a_C, Gamma_C, L_C, d_C, and eta_C from
-the paper.
+The authoritative definitions and derivation are in
+`docs/preconditioned_gd_convergence.tex`, section “A sufficient step-size
+bound.” The threshold is sufficient rather than sharp and the theorem requires
+the strict inequality `0 < eta < eta_C`.
 
 ## Exact parameterization
 

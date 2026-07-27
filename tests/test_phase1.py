@@ -133,13 +133,59 @@ def test_tied_optimal_family_metric() -> None:
 
 
 def test_certified_descent_below_threshold() -> None:
-    p = problem()
-    y = ksvd.random_y(p, 2, seed=29)
+    p = ksvd.spectral_problem([2.0])
+    y = torch.tensor([[1.2]], dtype=DTYPE)
     before = ksvd.potential(p, y)
-    constants = ksvd.certified_step_quantities(p, 2, float(before) + 0.05)
-    after = ksvd.potential(p, ksvd.reduced_y_update(p, y, 0.9 * constants.eta_C))
-    assert after < before
-    assert 0 < constants.eta_C <= 1 / constants.L_C
+    constants = ksvd.certified_step_quantities(p, 1, float(before) + 0.05)
+    eta = 0.9 * constants.eta_C
+    after = ksvd.potential(p, ksvd.reduced_y_update(p, y, eta))
+    gradient = ksvd.potential_gradient(p, y)
+    assert after <= before - 0.5 * eta * torch.sum(gradient.square())
+    assert 0 < constants.eta_C <= 1 / constants.hessian_bound_C
+
+
+def test_certified_step_exact_formulas_root_and_metadata() -> None:
+    p = problem()
+    k, C = 2, 2.0
+    constants = ksvd.certified_step_quantities(p, k, C)
+    L, S = 5.0, constants.S_C
+    phi = S / 2 - k / 2 * math.log(L * S / k)
+    assert phi == pytest.approx(C, abs=2e-14)
+    a = math.exp(-2 * C) / (L * S) ** (k - 1)
+    gamma = math.sqrt(S) * (1 + L / a)
+    hessian = 1 + 2 * L / a + 8 * L**2 * (math.sqrt(S) + 1) ** 2 / a**2
+    d = min(1.0, a / (4 * L * (math.sqrt(S) + 1)))
+    eta = min(1.0, d / gamma, 1 / hessian)
+    assert constants.a_C == pytest.approx(a)
+    assert constants.Gamma_C == pytest.approx(gamma)
+    assert constants.hessian_bound_C == pytest.approx(hessian)
+    assert constants.d_C == pytest.approx(d)
+    assert constants.eta_C == pytest.approx(eta)
+    serialized = constants.to_dict()
+    for name in ("S_C", "a_C", "Gamma_C", "hessian_bound_C", "d_C", "eta_C"):
+        assert serialized[f"log10_{name}"] == pytest.approx(math.log10(serialized[name]))
+    result = ksvd.run_deterministic(
+        p, ksvd.random_y(p, k, seed=91),
+        ksvd.RunConfig(eta=0.5 * constants.eta_C, max_steps=0, seed=91),
+        certified_step=constants,
+    )
+    assert result.metadata["theory"]["certified_step"]["definition_version"] == "manuscript_v1"
+
+
+def test_certified_step_root_minimum_and_invalid_level() -> None:
+    p, k = problem(), 2
+    minimum = k / 2 - k / 2 * math.log(float(p.eigenvalues[0]))
+    assert ksvd.certified_step_quantities(p, k, minimum).S_C == float(k)
+    with pytest.raises(ValueError, match=r"C < phi\(k\)"):
+        ksvd.certified_step_quantities(p, k, minimum - 1e-6)
+
+
+def test_certified_step_retains_logarithm_after_underflow() -> None:
+    constants = ksvd.certified_step_quantities(problem(), 2, 1000.0)
+    assert constants.a_C == 0.0 and constants.a_C_underflow
+    assert math.isfinite(constants.log10_a_C)
+    assert constants.eta_C == 0.0 and constants.eta_C_underflow
+    assert math.isfinite(constants.log10_eta_C)
 
 
 def test_runner_metadata_serialization_and_guards() -> None:

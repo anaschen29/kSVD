@@ -31,15 +31,10 @@ implemented as a transposed `torch.linalg.solve`. Calculations default to
 `torch.float64`, preserve the input device, and reject incompatible shapes or
 rank-deficient factors.
 
-The supplied mathematical reference requests exact paper definitions of
-`S_C`, `a_C`, `Gamma_C`, `L_C`, `d_C`, and `eta_C`, but does not actually state
-them or identify the paper. Phase 1 uses explicit conservative certified
-sublevel bounds derived directly from the displayed potential: `S_C` is an
-upper bound on squared Frobenius norm, `a_C` a lower Gram-eigenvalue bound,
-`Gamma_C` a gradient bound, `L_C` a Hessian/operator Lipschitz bound, `d_C` the
-distance-to-boundary safeguard, and `eta_C` the minimum descent/safeguard step.
-The formulas and derivation are documented in code and are not presented as
-the unnamed paper's unavailable exact constants.
+The certified constants use the authoritative manuscript-v1 definitions from
+the section “A sufficient step-size bound.” The code names the manuscript's
+`mathcal L_C` as `hessian_bound_C` to distinguish it from `L=lambda_1`, and
+labels `eta_C` as a sufficient, non-sharp threshold requiring `eta < eta_C`.
 
 ## Coordinate and formula invariants
 
@@ -82,9 +77,9 @@ Procrustes invariance, tied-cutoff geometry, and one-step certified descent.
 
 - 2026-07-27: `.agent/PLANS.md` is absent from the repository and all visible
   history. This plan records its own conventions so work can proceed.
-- 2026-07-27: The mathematical reference names but omits the certified-sublevel
-  formulas and does not cite the paper. Conservative independently derived
-  certificates are isolated and clearly labelled pending a source-of-truth.
+- 2026-07-27: Replaced the provisional certified quantities with the supplied
+  manuscript-v1 formulas, larger-root condition, log-space calculations, and
+  namespaced value/log10 metadata.
 - Near-rank-deficient Gram systems are checked before solves using singular
   values scaled by matrix size and machine epsilon; tests must exercise this.
 

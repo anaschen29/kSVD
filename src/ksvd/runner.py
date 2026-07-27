@@ -14,6 +14,7 @@ from torch import Tensor
 from .dynamics import reduced_y_update
 from .problem import SpectralProblem, _check_factor
 from .quantities import potential
+from .theory import CertifiedStep
 
 
 @dataclass(frozen=True)
@@ -75,11 +76,14 @@ def run_deterministic(
     config: RunConfig,
     *,
     diagnostic: Callable[[Tensor], dict[str, float]] | None = None,
+    certified_step: CertifiedStep | None = None,
 ) -> RunResult:
     """Run reduced ``Y (r,k)`` dynamics and explicitly guard failure modes.
 
     Termination is one of ``max_steps``, ``nonfinite``, ``diverged``,
-    ``rank_loss``, or ``cycle``. A fixed point is not labelled a cycle.
+    ``rank_loss``, or ``cycle``. A fixed point is not labelled a cycle. When a
+    certified threshold is supplied, its flat value/log mapping is stored at
+    ``metadata["theory"]["certified_step"]``.
     """
     _check_factor(initial_y, problem.r, "initial_y")
     y = initial_y.detach().clone()
@@ -92,6 +96,8 @@ def run_deterministic(
         "python_version": platform.python_version(),
         "torch_version": torch.__version__,
     }
+    if certified_step is not None:
+        metadata["theory"] = {"certified_step": certified_step.to_dict()}
     states, potentials, diagnostics = [y.clone()], [], []
     termination = "max_steps"
     history: list[Tensor] = []
