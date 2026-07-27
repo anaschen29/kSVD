@@ -1,0 +1,116 @@
+# kSVD PGD experiments
+
+This repository contains a PyTorch implementation of preconditioned gradient
+descent for low-rank positive-semidefinite matrix approximation:
+
+```text
+g(X) = 1/4 ||M - XX^T||_F^2.
+```
+
+The reusable numerical package lives in `src/ksvd`, and the mathematical and
+experimental specifications live in `docs/`.
+
+## Requirements
+
+- Python 3.10 or newer
+- PyTorch 2.0 or newer
+- pytest 7 or newer for running the test suite
+
+PyTorch is the only runtime dependency. The `test` optional dependency installs
+pytest. Experiments use `torch.float64` by default; a GPU is not required.
+
+## Environment setup
+
+Run the following commands from the repository root.
+
+### Standard `venv` and pip
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install --upgrade pip
+python -m pip install -e '.[test]'
+```
+
+The editable install makes changes under `src/ksvd` immediately available in
+the environment. On Windows PowerShell, activate the environment with
+`.venv\Scripts\Activate.ps1` instead.
+
+### Using `uv`
+
+If [`uv`](https://docs.astral.sh/uv/) is installed, the equivalent setup is:
+
+```bash
+uv venv --python 3.12
+source .venv/bin/activate
+uv pip install -e '.[test]'
+```
+
+Python 3.12 is an example supported interpreter; any available Python version
+meeting the requirement may be used.
+
+### Platform-specific PyTorch builds
+
+The normal editable install obtains the default PyTorch distribution. If a
+specific CUDA, ROCm, or CPU-only build is needed, install the appropriate
+PyTorch build for the platform first, then install this project:
+
+```bash
+# Install the appropriate torch build using the command supplied by PyTorch,
+# then install this repository and its test dependency.
+python -m pip install -e '.[test]'
+```
+
+## Verify the installation
+
+Confirm that the package imports and that the expected versions and float64
+default are visible:
+
+```bash
+python - <<'PY'
+import torch
+import ksvd
+
+problem = ksvd.spectral_problem([4.0, 2.0, 1.0])
+print("PyTorch:", torch.__version__)
+print("kSVD module:", ksvd.__file__)
+print("experiment dtype:", problem.eigenvalues.dtype)
+PY
+```
+
+The final line should report `torch.float64`.
+
+## Run the tests
+
+Run the complete deterministic Phase 1 suite with:
+
+```bash
+python -m pytest
+```
+
+For more detailed test names and output, use:
+
+```bash
+python -m pytest -vv
+```
+
+To run a single validation, pass its node identifier, for example:
+
+```bash
+python -m pytest tests/test_phase1.py::test_ambient_and_reduced_coordinate_update_equivalence
+```
+
+The tests use small deterministic float64 problems; they do not execute full
+experimental sweeps.
+
+## Development checks
+
+Syntax-check all package and test modules without running experiments:
+
+```bash
+python -m compileall -q src tests
+```
+
+Before working on the numerical implementation, read `AGENTS.md`,
+`docs/mathematical_reference.md`, `docs/experiment_implementation_spec.md`, and
+the living plan at `docs/plans/pgd_experiments.md`.
