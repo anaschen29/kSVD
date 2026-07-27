@@ -1,4 +1,4 @@
-# Phase 1 PGD experiments ExecPlan
+# Phase 1 and Phase 2 PGD experiments ExecPlan
 
 This is a living plan. It follows the project `AGENTS.md`; the referenced
 `.agent/PLANS.md` is not present in commit `d434e00`, so the conventional
@@ -14,6 +14,12 @@ Euclidean-gradient `Y` coordinates, take any of the three equivalent PGD
 updates, evaluate theory quantities and metrics, construct reproducible
 initializations, and execute a deterministic, guarded trajectory. Scientific
 sweeps, plotting, and algorithm comparisons remain out of scope.
+
+The current milestone adds the eight Phase 2 experiment wrappers.  Each wrapper
+owns the construction and metrics fixed by `docs/phase2_experiment_spec.md`,
+accepts an explicit smoke/full mode, and writes its complete raw numerical
+payload before any future plotting step.  Only smoke mode will be exercised in
+this milestone; full sweeps remain an explicit user action.
 
 ## Repository map and design decisions
 
@@ -48,6 +54,18 @@ energy outside the eligible block.
 
 ## Milestones and progress
 
+### Phase 2 (current)
+
+- [x] Re-read the convergence manuscript and Phase 2 specification completely,
+  inventory the Phase 1 API, and run the requested baseline test command.
+- [x] Audit the certified-step equations against the manuscript, with special
+  attention to the competing `Gamma_C` definitions.
+- [x] Extend the reusable runner records and implement shared Phase 2 helpers.
+- [x] Implement thin wrappers for all eight specified experiments.
+- [x] Add deterministic wrapper tests; attempt only minimal smoke configurations.
+- [x] Record the environment block on numerical raw-result inspection, validate
+  all available static checks, commit, and open a pull request.
+
 - [x] Read all present project instructions and both mathematical documents in
   full; inventory the complete repository and git history. (`.agent/PLANS.md`
   was confirmed absent.)
@@ -75,6 +93,17 @@ Procrustes invariance, tied-cutoff geometry, and one-step certified descent.
 
 ## Discoveries and risks
 
+- 2026-07-27 Phase 2 audit: equations (6)--(12) of the manuscript define
+  `Gamma_C = sqrt(S_C) * (1 + L/a_C)`.  This is the gradient-norm bound obtained
+  directly from `||Y|| <= sqrt(S_C)`, `||Lambda|| = L`, and
+  `||A(Y)^-1|| <= 1/a_C`.  The checked-in Phase 1 implementation and tests use
+  this definition.  The alternative historical expression is not authoritative
+  and must not be mixed into `eta_C = min(1, d_C/Gamma_C, 1/L_C)`.
+- 2026-07-27: the required `python -m pytest -vv` currently fails at collection
+  because the active Python 3.14 environment has no PyTorch.  A CPU-wheel install
+  was attempted but the package tunnel returned HTTP 403; implementation will
+  still include syntax checks and another final test attempt.
+
 - 2026-07-27: `.agent/PLANS.md` is absent from the repository and all visible
   history. This plan records its own conventions so work can proceed.
 - 2026-07-27: Replaced the provisional certified quantities with the supplied
@@ -84,6 +113,23 @@ Procrustes invariance, tied-cutoff geometry, and one-step certified descent.
   values scaled by matrix size and machine epsilon; tests must exercise this.
 
 ## Results and retrospective
+
+Phase 2 validation (2026-07-27):
+
+- `python -m pytest -vv` was run before and after implementation.  Collection
+  remains blocked because `torch` is absent.  The second run also exposed that
+  pytest did not add the src-layout package to `sys.path`, so `pythonpath =
+  ["src"]` was added to the repository configuration.
+- `python -m pip install torch --index-url
+  https://download.pytorch.org/whl/cpu` exhausted all retries with HTTP 403 from
+  the environment's package tunnel.  No alternate installed interpreter or
+  cached wheel was found.
+- `python -m compileall -q src experiments tests` and `git diff --check` pass.
+- Because PyTorch cannot be imported, executing even the minimal numerical
+  smoke wrappers and inspecting their serialized values is environment-blocked.
+  The atomic JSON serializer and representative raw schema are covered by the
+  new Phase 2 test, but this plan deliberately does not misstate a syntax check
+  as a numerical experiment.
 
 Phase 1 core and its deterministic tests are implemented. No scientific sweep
 was run. Validation commands and outcomes:
