@@ -161,8 +161,16 @@ def hessian_mode_isolation(*, smoke: bool = True) -> dict[str, object]:
             for family, i, j, h, eigenvalue in modes:
                 action = (reduced_y_update(p, e + eps*h, eta) - reduced_y_update(p, e - eps*h, eta))/(2*eps)
                 measured = float(torch.sum(action*h)); predicted = 1 - eta*eigenvalue
+                absolute_error = abs(measured - predicted)
+                # A relative error is undefined for the symmetric modes when
+                # eta=1/2 makes their predicted factor exactly zero.  Use the
+                # absolute finite-difference residual in that case instead of
+                # dividing by machine epsilon and manufacturing a huge value.
+                error = absolute_error if predicted == 0.0 else absolute_error / abs(predicted)
                 rows.append({"family": family, "i": i, "j": j, "eta": eta, "epsilon": eps, "predicted": predicted,
-                             "measured": measured, "relative_error": abs(measured-predicted)/max(abs(predicted), torch.finfo(torch.float64).eps)})
+                             "measured": measured, "absolute_error": absolute_error,
+                             "relative_error": error,
+                             "error_kind": "absolute" if predicted == 0.0 else "relative"})
     return {"metadata": _metadata("hessian_mode_isolation", 0, Phase2Config(max_steps=0), smoke), "modes": rows}
 
 
@@ -189,8 +197,9 @@ def tied_eigenvalues(*, smoke: bool = True) -> dict[str, object]:
             y=xbar_to_y(p,p.eigenvalues[:,None]*random_y(p,4,seed)); run=_trajectory(p,y,4,.5,config,tied=delta==0)
             run.update({"delta":delta,"seed":seed}); cases.append(run)
     iso=spectral_problem(torch.ones(10,dtype=torch.float64)); y=random_y(iso,4,99); updated=reduced_y_update(iso,y,.5)
-    sanity={"column_space_error":float(subspace_distance(y,updated)),"gram_error_before":float(torch.linalg.norm(y.T@y-torch.eye(4))),
-            "gram_error_after":float(torch.linalg.norm(updated.T@updated-torch.eye(4)))}
+    identity = torch.eye(4, dtype=y.dtype, device=y.device)
+    sanity={"column_space_error":float(subspace_distance(y,updated)),"gram_error_before":float(torch.linalg.norm(y.T@y-identity)),
+            "gram_error_after":float(torch.linalg.norm(updated.T@updated-identity))}
     return {"metadata":_metadata("tied_eigenvalues",0,config,smoke),"cases":cases,"isotropic_sanity":sanity}
 
 
@@ -201,9 +210,12 @@ def geometry_of_kc(*, smoke: bool = True) -> dict[str, object]:
         for b in grid:
             if a != 0 or b != 0: values.append([float(a),float(b),float(potential(p,torch.tensor([[a],[b]],dtype=torch.float64)))])
     p2=spectral_problem([2,1,.4]); slice_rows=[]
-    for theta in torch.linspace(0,math.pi/2,5 if smoke else 201):
-        q=torch.stack((torch.tensor([1.,0,0],dtype=torch.float64),torch.tensor([0.,torch.cos(theta),torch.sin(theta)],dtype=torch.float64)),dim=1)
-        for s in torch.linspace(-3,3,5 if smoke else 201): slice_rows.append({"theta":float(theta),"kind":"balanced","parameter":float(s),"F":float(potential(p2,q@torch.diag(torch.tensor([torch.exp(s),torch.exp(-s)]))))})
+    for theta in torch.linspace(0,math.pi/2,5 if smoke else 201, dtype=torch.float64):
+        q=torch.zeros(3, 2, dtype=torch.float64)
+        q[0, 0], q[1, 1], q[2, 1] = 1.0, torch.cos(theta), torch.sin(theta)
+        for s in torch.linspace(-3,3,5 if smoke else 201, dtype=torch.float64):
+            scales = torch.stack((torch.exp(s), torch.exp(-s)))
+            slice_rows.append({"theta":float(theta),"kind":"balanced","parameter":float(s),"F":float(potential(p2,q@torch.diag(scales)))})
         for a in torch.logspace(-2,2,5 if smoke else 201,dtype=torch.float64): slice_rows.append({"theta":float(theta),"kind":"scale","parameter":float(a),"F":float(potential(p2,a*q))})
     C=float(potential(p2,minimizer_y(p2,2)))+.5; cert=certified_step_quantities(p2,2,C); samples=[]
     for seed in range(20 if smoke else 5000):

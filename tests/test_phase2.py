@@ -13,6 +13,8 @@ def test_hessian_mode_wrapper_matches_predictions() -> None:
     families = {row["family"] for row in result["modes"]}
     assert families == {"symmetric", "cross", "tangent"}
     assert max(row["relative_error"] for row in result["modes"]) < 1e-7
+    zero_modes = [row for row in result["modes"] if row["predicted"] == 0.0]
+    assert zero_modes and all(row["error_kind"] == "absolute" for row in zero_modes)
 
 
 def test_geometry_wrapper_and_raw_serialization(tmp_path) -> None:

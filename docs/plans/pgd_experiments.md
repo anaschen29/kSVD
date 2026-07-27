@@ -116,6 +116,13 @@ Procrustes invariance, tied-cutoff geometry, and one-step certified descent.
 
 Phase 2 validation (2026-07-27):
 
+- Follow-up test execution in a PyTorch-enabled environment reported 19 passing
+  tests and two Phase 2 failures.  The Hessian wrapper had divided the residual
+  of an exactly-zero predicted factor by machine epsilon, and the geometry slice
+  had constructed its diagonal scales with PyTorch's default float32 dtype.
+  The wrapper now records an absolute residual for zero-factor modes and builds
+  every slice tensor explicitly in float64.
+
 - `python -m pytest -vv` was run before and after implementation.  Collection
   remains blocked because `torch` is absent.  The second run also exposed that
   pytest did not add the src-layout package to `sys.path`, so `pythonpath =
