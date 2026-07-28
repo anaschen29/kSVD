@@ -17,6 +17,11 @@ from .quantities import (
 )
 from .runner import RunConfig, RunResult, run_deterministic
 from .theory import CertifiedStep, certified_step_quantities
+from .phase2 import (
+    Phase2Config, boundary_gap_scaling, geometry_of_kc, hessian_mode_isolation,
+    initialization_ablation, predicted_local_rates, saddle_escape,
+    save_raw_result, step_size_phase_diagram, tied_eigenvalues,
+)
 
 __all__ = [
     "CertifiedStep", "RunConfig", "RunResult", "SpectralProblem", "aligned_y",
@@ -27,5 +32,8 @@ __all__ = [
     "procrustes_distance", "random_y", "reduced_xbar_update",
     "reduced_y_update", "run_deterministic", "spectral_objective",
     "spectral_problem", "subspace_distance", "tied_optimal_family_distance",
-    "x_to_xbar", "xbar_to_x", "xbar_to_y", "y_to_xbar",
+    "x_to_xbar", "xbar_to_x", "xbar_to_y", "y_to_xbar", "Phase2Config",
+    "boundary_gap_scaling", "geometry_of_kc", "hessian_mode_isolation",
+    "initialization_ablation", "predicted_local_rates", "saddle_escape",
+    "save_raw_result", "step_size_phase_diagram", "tied_eigenvalues",
 ]
