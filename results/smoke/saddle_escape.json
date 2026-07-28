@@ -1,0 +1,51 @@
+{
+  "cases": [
+    {
+      "epsilon": 1e-08,
+      "escape_time": 84,
+      "eta": 0.5,
+      "predicted_escape_time": 83.0162057939225,
+      "sign": -1
+    },
+    {
+      "epsilon": 1e-08,
+      "escape_time": 84,
+      "eta": 0.5,
+      "predicted_escape_time": 83.0162057939225,
+      "sign": 1
+    },
+    {
+      "epsilon": 0.0001,
+      "escape_time": 36,
+      "eta": 0.5,
+      "predicted_escape_time": 35.57837391168106,
+      "sign": -1
+    },
+    {
+      "epsilon": 0.0001,
+      "escape_time": 36,
+      "eta": 0.5,
+      "predicted_escape_time": 35.57837391168106,
+      "sign": 1
+    }
+  ],
+  "exact_fixed_error": 0.0,
+  "metadata": {
+    "config": {
+      "divergence_threshold": 1000000000000.0,
+      "geometric_tolerance": 1e-10,
+      "max_steps": 100,
+      "objective_tolerance": 1e-14
+    },
+    "device": "cpu",
+    "dtype": "torch.float64",
+    "experiment": "saddle_escape",
+    "git_commit": "8fd0f10f651ef01cf39e1d904d7a9ef3903a2b0e",
+    "python_version": "3.14.4",
+    "seed": 0,
+    "serialized_bytes": 1152,
+    "smoke": true,
+    "torch_version": "2.13.0+cu130",
+    "wrapper_elapsed_seconds": 0.07542899100008071
+  }
+}
