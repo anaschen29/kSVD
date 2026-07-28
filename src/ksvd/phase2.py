@@ -99,21 +99,38 @@ def _trajectory(problem: SpectralProblem, y: Tensor, k: int, eta: float, config:
     previous = None
     previous_error = None
     termination = "max_steps"
+    termination_detail: str | None = None
     for iteration in range(config.max_steps + 1):
         if not bool(torch.isfinite(y).all()): termination = "nan"; break
         if float(torch.linalg.norm(y)) > config.divergence_threshold: termination = "diverged"; break
         singular = torch.linalg.svdvals(y)
         if float(singular[-1]) <= 100 * torch.finfo(y.dtype).eps * float(singular[0]): termination = "lost_rank"; break
-        row, error = _record(problem, y, previous, k, tied=tied, error_previous=previous_error)
+        try:
+            row, error = _record(problem, y, previous, k, tied=tied, error_previous=previous_error)
+        except (ValueError, torch.linalg.LinAlgError) as error:
+            # The factor-level SVD can pass the prescribed rank tolerance even
+            # when the weighted Gram matrix has already become numerically
+            # singular (its conditioning is approximately squared).  Treat a
+            # rejected diagnostic solve as rank loss rather than allowing a
+            # controlled initialization sweep to abort.
+            termination = "lost_rank"
+            termination_detail = str(error)
+            break
         row["iteration"] = iteration
         records.append(row)
         if error <= config.geometric_tolerance or float(row["objective_gap"]) <= config.objective_tolerance:
             termination = "converged"; break
-        next_y = reduced_y_update(problem, y, eta)
+        try:
+            next_y = reduced_y_update(problem, y, eta)
+        except (ValueError, torch.linalg.LinAlgError) as error:
+            termination = "lost_rank"
+            termination_detail = str(error)
+            break
         if previous is not None and float(procrustes_distance(next_y, previous)) <= 1e-12 * max(1.0, float(torch.linalg.norm(previous))):
             termination = "cycle"; y = next_y; break
         previous, previous_error, y = y, error, next_y
-    return {"eta": eta, "termination": termination, "records": records,
+    return {"eta": eta, "termination": termination,
+            "termination_detail": termination_detail, "records": records,
             "final_y": y.detach().cpu().tolist()}
 
 

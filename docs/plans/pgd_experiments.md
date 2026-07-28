@@ -116,6 +116,13 @@ Procrustes invariance, tied-cutoff geometry, and one-step certified descent.
 
 Phase 2 validation (2026-07-27):
 
+- 2026-07-28 smoke follow-up: the condition-`1e8` initialization ablation
+  exposed a weighted Gram matrix whose conditioning had squared beyond the
+  float64 solve threshold even though the factor-level rank check passed.  The
+  Phase 2 trajectory now catches rejected diagnostic and update solves,
+  serializes `lost_rank` plus a termination detail, and continues the sweep
+  instead of raising out of the wrapper.
+
 - Follow-up test execution in a PyTorch-enabled environment reported 19 passing
   tests and two Phase 2 failures.  The Hessian wrapper had divided the residual
   of an exactly-zero predicted factor by machine epsilon, and the geometry slice

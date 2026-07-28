@@ -35,3 +35,17 @@ def test_all_eight_wrappers_are_exported() -> None:
     }
     from ksvd.phase2 import EXPERIMENTS
     assert set(EXPERIMENTS) == expected
+
+
+def test_trajectory_classifies_numerically_singular_weighted_gram() -> None:
+    """A condition-1e8 ablation must serialize rank loss, not raise."""
+    import torch
+    from ksvd.phase2 import Phase2Config, _trajectory
+
+    problem = ksvd.spectral_problem([2.0, 1.5, 1.2, 1.0, 0.8])
+    y = torch.eye(5, dtype=torch.float64)[:, :4]
+    y = y @ torch.diag(torch.tensor([1.0, 1e-2, 1e-4, 1e-8], dtype=torch.float64))
+    result = _trajectory(problem, y, 4, 0.5, Phase2Config(max_steps=1))
+
+    assert result["termination"] == "lost_rank"
+    assert "numerically rank deficient" in result["termination_detail"]
