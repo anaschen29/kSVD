@@ -142,6 +142,19 @@ Stage 1. Stage 1 runs local rates, Hessian modes, and saddle escape; Stage 2
 runs boundary-gap scaling, tied eigenvalues, and initialization ablation;
 Stage 3 runs geometry and the step-size phase diagram.
 
+Launchers default to 56 workers on the reported 64-core experiment host. The
+boundary-gap wrapper uses these workers for independent cases, keeps output in
+the original deterministic order, and prints periodic completion counts. Use a
+different positive count when needed:
+
+```bash
+experiments/full/run_stage2.sh "$RUN_DIR" --workers 32
+```
+
+Each numerical worker uses one OpenMP/MKL/OpenBLAS thread to avoid multiplying
+the worker pool by PyTorch's native thread pool. Other wrappers currently remain
+single-case-loop computations even though the requested worker count is logged.
+
 Each launcher runs sequentially and stops on the first failure. It records
 unaggregated JSON under `raw/`, append-only console output under `logs/`, SHA256
 files under `checksums/`, an environment snapshot, a tab-separated manifest,
@@ -150,7 +163,7 @@ stage after a failure, rerun it with `--resume`; completed JSON is validated and
 skipped before execution continues:
 
 ```bash
-experiments/full/run_stage2.sh results/full/phase2-YYYYMMDDTHHMMSSZ --resume
+experiments/full/run_stage2.sh results/full/phase2-YYYYMMDDTHHMMSSZ --resume --workers 56
 ```
 
 Do not run two stage launchers concurrently against the same directory. The

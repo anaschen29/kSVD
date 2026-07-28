@@ -54,6 +54,26 @@ energy outside the eligible block.
 
 ## Milestones and progress
 
+### Simple CPU parallelism (current)
+
+- [x] Add an optional worker count to the Phase 2 CLI and use an ordered thread
+  pool for the expensive boundary-gap cases, preserving deterministic output.
+- [x] Pass the worker count through the staged launcher with one numerical
+  thread per worker and retain the existing experiment-level JSON/logging.
+- [x] Add deterministic tests and documentation; run no full sweep.
+
+The user requested a deliberately simple implementation rather than case-level
+sharding.  The selected design keeps the current JSON schema and resume
+granularity, parallelizes the 900 independent boundary-gap cases in-process,
+and defaults the full launcher to 56 workers on the reported 64-core host.
+The CLI records requested/effective worker counts, restricts PyTorch native
+threads when concurrency is active, and reports boundary progress every five
+percent.  Ordered result placement preserves the serial JSON case order.
+`python -m pytest
+tests/test_phase2.py::test_boundary_parallelism_preserves_case_order_and_values
+tests/test_full_sweep_scripts.py -vv` passes four tests with the existing
+optional-NumPy warning.  No full launcher or full experiment was run.
+
 ### Staged full-sweep launch scripts (current)
 
 - [x] Add reusable shell logging/manifest helpers and three dedicated stage

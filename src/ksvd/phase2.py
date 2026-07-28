@@ -8,6 +8,7 @@ sweep; passing ``smoke=False`` is the explicit opt-in to the full specification.
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass
+from concurrent.futures import ThreadPoolExecutor, as_completed
 import json
 import math
 from pathlib import Path
@@ -190,6 +191,24 @@ def _relative_unique(values: list[float], tolerance: float = 1e-12) -> list[floa
     return unique
 
 
+def _ordered_parallel_map(function: Callable[[object], object], tasks: list[object], workers: int,
+                          label: str) -> list[object]:
+    """Run independent tasks concurrently while preserving input order."""
+    if workers < 1:
+        raise ValueError("workers must be positive")
+    if workers == 1:
+        return [function(task) for task in tasks]
+    results: list[object | None] = [None] * len(tasks)
+    report_every=max(1,len(tasks)//20)
+    with ThreadPoolExecutor(max_workers=workers,thread_name_prefix="ksvd") as executor:
+        futures={executor.submit(function,task):index for index,task in enumerate(tasks)}
+        for completed,future in enumerate(as_completed(futures),start=1):
+            results[futures[future]]=future.result()
+            if completed%report_every==0 or completed==len(tasks):
+                print(f"{label}: {completed}/{len(tasks)} cases complete",flush=True)
+    return [result for result in results if result is not None]
+
+
 def _potential_hessian_norm(problem: SpectralProblem, y: Tensor) -> float:
     """Return the exact small-problem Hessian operator norm used in Experiment 5."""
     shape = y.shape
@@ -275,18 +294,25 @@ def hessian_mode_isolation(*, smoke: bool = True) -> dict[str, object]:
     return {"metadata": _metadata("hessian_mode_isolation", 0, Phase2Config(max_steps=0), smoke), "modes": rows}
 
 
-def boundary_gap_scaling(*, smoke: bool = True) -> dict[str, object]:
+def boundary_gap_scaling(*, smoke: bool = True, workers: int = 1) -> dict[str, object]:
     """Experiment 3: eigengap-dependent transients and asymptotic rates."""
-    config = Phase2Config(max_steps=120 if smoke else 20_000); cases=[]
+    config = Phase2Config(max_steps=120 if smoke else 20_000); tasks=[]
     for k in ([1] if smoke else [1,2,4,8]):
         for delta in ([1e-2, .1, .5] if smoke else [1e-4,3e-4,1e-3,3e-3,1e-2,3e-2,.1,.3,.5]):
-            p=spectral_problem(_spectrum(k,delta))
             for family in ["local_normal","support_gaussian"]:
                 for seed in (range(2) if smoke else range(5 if family=="local_normal" else 20)):
-                    y=_normal_local(p,k,seed) if family=="local_normal" else xbar_to_y(p,p.eigenvalues[:,None]*random_y(p,k,seed))
-                    run=_trajectory(p,y,k,.5,config); run.update({"k":k,"delta":delta,"family":family,"seed":seed,
-                        "predicted_rate":1-delta/2,"rate_fit":_fit(run["records"],"factor_manifold_distance")}); cases.append(run)
-    return {"metadata":_metadata("boundary_gap_scaling",0,config,smoke),"cases":cases}
+                    tasks.append((k,delta,family,seed))
+    def run_case(task: object) -> dict[str, object]:
+        k,delta,family,seed=task
+        p=spectral_problem(_spectrum(k,delta))
+        y=_normal_local(p,k,seed) if family=="local_normal" else xbar_to_y(p,p.eigenvalues[:,None]*random_y(p,k,seed))
+        run=_trajectory(p,y,k,.5,config); run.update({"k":k,"delta":delta,"family":family,"seed":seed,
+            "predicted_rate":1-delta/2,"rate_fit":_fit(run["records"],"factor_manifold_distance")})
+        return run
+    cases=_ordered_parallel_map(run_case,tasks,workers,"boundary_gap_scaling")
+    result={"metadata":_metadata("boundary_gap_scaling",0,config,smoke),"cases":cases}
+    result["metadata"]["workers"]=workers
+    return result
 
 
 def tied_eigenvalues(*, smoke: bool = True) -> dict[str, object]:

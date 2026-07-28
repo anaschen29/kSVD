@@ -95,3 +95,15 @@ def test_phase2_experiment_specific_completeness() -> None:
     assert ablation["family_summaries"]
     assert ablation["regression"]["label"] == "exploratory, not theoretical"
     assert all("rate_fit" in case and "total_iterations" in case for case in ablation["cases"])
+
+
+def test_boundary_parallelism_preserves_case_order_and_values() -> None:
+    serial = ksvd.boundary_gap_scaling(smoke=True, workers=1)
+    parallel = ksvd.boundary_gap_scaling(smoke=True, workers=2)
+    assert parallel["metadata"]["workers"] == 2
+    for left, right in zip(serial["cases"], parallel["cases"], strict=True):
+        assert (left["k"], left["delta"], left["family"], left["seed"]) == (
+            right["k"], right["delta"], right["family"], right["seed"]
+        )
+        assert left["termination"] == right["termination"]
+        assert left["final_y"] == right["final_y"]

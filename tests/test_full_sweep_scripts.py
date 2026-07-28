@@ -30,7 +30,9 @@ def test_full_sweep_stages_match_the_approved_order() -> None:
 
 def test_full_sweep_common_script_preserves_raw_results_and_logs() -> None:
     text = (FULL / "_common.sh").read_text(encoding="utf-8")
-    assert '"experiments/$experiment.py" --full --output "$raw"' in text
+    assert '"experiments/$experiment.py" --full --workers "$FULL_WORKERS" --output "$raw"' in text
+    assert "FULL_WORKERS=${KSVD_WORKERS:-56}" in text
+    assert "OMP_NUM_THREADS=1" in text
     assert "Refusing to overwrite existing artifact" in text
     assert "full_validate_raw" in text
     assert "sha256sum" in text

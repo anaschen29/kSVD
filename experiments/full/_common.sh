@@ -7,17 +7,28 @@ FULL_SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 FULL_REPO_ROOT="$(cd -- "$FULL_SCRIPT_DIR/../.." && pwd)"
 
 full_usage() {
-  printf 'Usage: %s RUN_DIRECTORY [--resume]\n' "$(basename -- "$0")" >&2
+  printf 'Usage: %s RUN_DIRECTORY [--resume] [--workers N]\n' "$(basename -- "$0")" >&2
 }
 
 full_init() {
-  if [[ $# -lt 1 || $# -gt 2 || ( $# -eq 2 && $2 != --resume ) ]]; then
+  if [[ $# -lt 1 ]]; then
     full_usage
     return 2
   fi
   FULL_RUN_DIR="$(mkdir -p -- "$1" && cd -- "$1" && pwd)"
+  shift
   FULL_RESUME=false
-  [[ ${2-} == --resume ]] && FULL_RESUME=true
+  FULL_WORKERS=${KSVD_WORKERS:-56}
+  while (( $# )); do
+    case $1 in
+      --resume) FULL_RESUME=true; shift ;;
+      --workers)
+        [[ $# -ge 2 ]] || { full_usage; return 2; }
+        FULL_WORKERS=$2; shift 2 ;;
+      *) full_usage; return 2 ;;
+    esac
+  done
+  [[ $FULL_WORKERS =~ ^[1-9][0-9]*$ ]] || { printf 'Worker count must be a positive integer.\n' >&2; return 2; }
   mkdir -p -- "$FULL_RUN_DIR/raw" "$FULL_RUN_DIR/logs" "$FULL_RUN_DIR/checksums"
   FULL_MANIFEST="$FULL_RUN_DIR/manifest.tsv"
   if [[ ! -e $FULL_MANIFEST ]]; then
@@ -104,7 +115,8 @@ full_run_experiment() {
   (
     cd -- "$FULL_REPO_ROOT"
     export PYTHONPATH="$FULL_REPO_ROOT/src${PYTHONPATH:+:$PYTHONPATH}"
-    time python "experiments/$experiment.py" --full --output "$raw"
+    export OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 NUMEXPR_NUM_THREADS=1
+    time python "experiments/$experiment.py" --full --workers "$FULL_WORKERS" --output "$raw"
   ) 2>&1 | tee -a "$log"
   local status=${PIPESTATUS[0]}
   set -e
