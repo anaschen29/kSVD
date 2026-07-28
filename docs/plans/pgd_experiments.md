@@ -54,6 +54,28 @@ energy outside the eligible block.
 
 ## Milestones and progress
 
+### Phase 2 specification-completeness follow-up (current)
+
+- [x] Add per-run timing/size metadata, structured warnings, explicit
+  stagnation/underflow handling, and serialized rate-fitting endpoints.
+- [x] Complete the tied-eigenspace, geometry, step-size-cutoff, and
+  initialization-ablation outputs required by the Phase 2 specification.
+- [x] Add deterministic schema/completeness tests for every newly required
+  output and preserve the smoke limits of two seeds and three swept values.
+- [x] Run the complete unit suite and only the eight minimal smoke wrappers;
+  inspect regenerated raw artifacts without making experimental claims.
+- [x] Regenerate the audit, record measured resource data, commit, and create a
+  PR.  Full sweeps remain prohibited until separately approved.
+
+Design decisions: use `time.perf_counter` for monotonic elapsed time; keep
+timing informational rather than deterministic test data; store warnings as
+structured dictionaries; classify a one-step update below the float64-scaled
+movement threshold as `stagnated` rather than the existing period-two `cycle`;
+and retain raw iteration records before summaries.  Rate windows will store
+their first and last actual iteration indices.  Experiment-specific summaries
+will be computed from raw cases, not substituted for them.  No production
+dependency is needed: PyTorch and the Python standard library suffice.
+
 ### Phase 2 (current)
 
 - [x] Re-read the convergence manuscript and Phase 2 specification completely,
@@ -115,6 +137,29 @@ Procrustes invariance, tied-cutoff geometry, and one-step certified descent.
 ## Results and retrospective
 
 Smoke-artifact audit (2026-07-28):
+
+- Specification-completeness follow-up: the common runner now records elapsed
+  time, raw-history bytes, structured numerical warnings, and distinct cycle,
+  stagnation, underflow, rank-loss, divergence, and non-finite outcomes.  Fits
+  include exact endpoints and invalid reasons.  Experiments 4, 5, 7, and 8 now
+  serialize the previously missing tied-space, geometry-bound, cutoff, and
+  ablation summaries.  Step grids use relative-`1e-12` deduplication.
+- `python -m pytest -vv` passes all 25 tests with one environment warning for
+  unavailable optional NumPy.  Each of the eight CLI wrappers was then run once
+  in default smoke mode with `PYTHONPATH=src`; no `--full` flag was used.  All
+  regenerated metadata points to implementation commit `8fd0f10` and its
+  `serialized_bytes` value equals the artifact size.
+- The corrected smoke set contains 5,958 iterative records across 137 runs.
+  In-process wrapper time is 15.697 seconds and raw JSON is 4,568,402 bytes.
+  Direct smoke-shaped grid scaling estimates 0.32 hours; record-level planning
+  estimates range from 0.44 trajectory-hours/0.29 GB to a deliberately
+  conservative 201.5 trajectory-hours/132.6 GB if every trajectory reaches
+  20,001 records.  These are resource-planning estimates, not guarantees.
+- Smoke outcomes include expected invalid fits and explicit rank-loss,
+  divergence, cycle, stagnation, and underflow classifications.  They are
+  retained in `event_audit.csv` and must not be interpreted as experiment
+  failures or relabelled as convergence.  The pipeline is ready for review,
+  but full sweeps remain prohibited until explicit approval.
 
 - Fetched the public `main` branch and imported commit `8bb0cbf`, which contains
   all eight unaggregated smoke JSON files.  No additional experiment, smoke

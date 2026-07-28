@@ -38,6 +38,10 @@ def _runs(document: dict[str, Any]) -> list[dict[str, Any]]:
         candidate = case.get("run", case)
         if isinstance(candidate, dict) and "records" in candidate:
             runs.append(candidate)
+    for case in document.get("certified_subset", []):
+        candidate = case.get("run")
+        if isinstance(candidate, dict) and "records" in candidate:
+            runs.append(candidate)
     return runs
 
 
@@ -96,6 +100,12 @@ def main() -> None:
     lines = ["# Phase 2 smoke-pipeline audit", "",
              f"Generated {date.today().isoformat()} from committed raw JSON. **These smoke cases only check that the pipeline appears internally correct; they are not experimental results and do not verify any theorem.**", ""]
     total_bytes = 0
+    total_run_seconds = 0.0
+    total_runs = 0
+    total_wrapper_seconds = 0.0
+    projected_wrapper_seconds = 0.0
+    total_records = 0
+    total_history_bytes = 0
     fit_rows: list[dict[str, Any]] = []
     event_rows: list[dict[str, Any]] = []
     manifest_rows: list[dict[str, Any]] = []
@@ -104,21 +114,32 @@ def main() -> None:
         document = json.loads(path.read_text(encoding="utf-8"), parse_constant=lambda token: (_ for _ in ()).throw(ValueError(token)))
         total_bytes += path.stat().st_size
         metadata = document["metadata"]
+        wrapper_seconds=float(metadata.get("wrapper_elapsed_seconds",0.0))
+        total_wrapper_seconds+=wrapper_seconds
+        scale={"predicted_local_rates":400/12,"hessian_mode_isolation":216/24,
+               "boundary_gap_scaling":900/12,"tied_eigenvalues":250/6,
+               "geometry_of_kc":442002/1013,"saddle_escape":66/4,
+               "step_size_phase_diagram":12480/72,"initialization_ablation":463/35}[path.stem]
+        projected_wrapper_seconds+=wrapper_seconds*scale
         runs = _runs(document)
+        total_runs += len(runs)
+        total_run_seconds += sum(float(run.get("elapsed_seconds", 0.0)) for run in runs)
+        total_records += sum(len(run["records"]) for run in runs)
+        total_history_bytes += sum(int(run.get("raw_history_bytes", 0)) for run in runs)
         statuses = Counter(run.get("termination", "missing") for run in runs)
         nonfinite = sum(isinstance(value, float) and not math.isfinite(value) for value in _walk(document))
         fits = [value for value in _walk(document) if isinstance(value, dict) and {"points", "rho_ratio", "rho_slope"} <= value.keys()]
         invalid = sum(fit["rho_ratio"] is None or fit["rho_slope"] is None for fit in fits)
-        warnings = sum(statuses[key] for key in ("lost_rank", "nan", "cycle", "diverged"))
+        warnings = sum(statuses[key] for key in ("lost_rank", "nan", "cycle", "diverged", "stagnated", "underflow"))
         for index, case in enumerate(document.get("cases", [])):
             run = case.get("run", case)
             descriptor = ";".join(f"{key}={case[key]}" for key in ("k", "eta", "delta", "family", "seed", "spectrum", "value") if key in case)
             manifest_rows.append({"experiment": path.stem, "case": index, "descriptor": descriptor,
                                   "records": len(run.get("records", [])), "termination": run.get("termination", "not_applicable")})
-            if run.get("termination") in {"lost_rank", "nan", "cycle", "diverged"}:
+            if run.get("termination") in {"lost_rank", "nan", "cycle", "diverged", "stagnated", "underflow"}:
                 event_rows.append({"experiment": path.stem, "case": index, "descriptor": descriptor,
                                    "event": run["termination"], "detail": run.get("termination_detail") or ""})
-            for fit_name in ("factor_fit", "objective_fit", "rate_fit"):
+            for fit_name in ("factor_fit", "objective_fit", "rate_fit", "late_rate_fit"):
                 if fit_name not in case:
                     continue
                 key = "objective_gap" if fit_name == "objective_fit" else "factor_manifold_distance"
@@ -128,10 +149,17 @@ def main() -> None:
                                      "predicted_factor_rate", case.get("predicted_rate"))
                 fit_rows.append({"experiment": path.stem, "case": index, "descriptor": descriptor,
                                  "fit": fit_name, "predicted": predicted, "points": fit["points"],
-                                 "window_first": usable[0]["iteration"] if usable else "",
-                                 "window_last": usable[-1]["iteration"] if usable else "",
+                                 "window_first": fit.get("window_first"),
+                                 "window_last": fit.get("window_last"),
                                  "rho_ratio": fit["rho_ratio"], "rho_slope": fit["rho_slope"],
                                  "valid": fit["rho_ratio"] is not None and fit["rho_slope"] is not None})
+        for index, case in enumerate(document.get("certified_subset", [])):
+            run=case["run"]; descriptor=f"certified_subset;family={case['family']};seed={case['seed']};eta={case['eta']}"
+            manifest_rows.append({"experiment":path.stem,"case":f"certified_{index}","descriptor":descriptor,
+                                  "records":len(run["records"]),"termination":run["termination"]})
+            if run["termination"] in {"lost_rank","nan","cycle","diverged","stagnated","underflow"}:
+                event_rows.append({"experiment":path.stem,"case":f"certified_{index}","descriptor":descriptor,
+                                   "event":run["termination"],"detail":run.get("termination_detail") or ""})
         if path.stem == "hessian_mode_isolation":
             identity_rows.append((path.stem, "max absolute predicted/measured error",
                                   max(float(row["absolute_error"]) for row in document["modes"]), "finite-difference check"))
@@ -146,12 +174,12 @@ def main() -> None:
                       f"- Configuration: `{json.dumps(metadata['config'], sort_keys=True)}`; dtype `{metadata['dtype']}`; device `{metadata['device']}`; seed `{metadata['seed']}`; recorded commit `{metadata['git_commit']}`.",
                       f"- Cases/runs: {len(document.get('cases', document.get('modes', [])))} / {len(runs)}; statuses: `{dict(statuses)}`.",
                       f"- Fits: {len(fits)} total, {invalid} invalid (fewer than ten usable points or no consecutive ratios). The fitting rule is `1e-9 <= error <= 1e-3`; exact reconstructed first/last indices and predicted/fitted values are in [`fit_audit.csv`](fit_audit.csv).",
-                      f"- Numerical event count: {warnings} rank-loss/NaN/cycle/divergence terminations; non-finite JSON values: {nonfinite}.",
+                      f"- Numerical event count: {warnings} rank-loss/NaN/cycle/divergence/stagnation/underflow terminations; non-finite JSON values: {nonfinite}.",
                       f"- Preliminary per-run dashboard: [`{dashboard}`](plots/{path.stem}.svg).", ""])
     lines.extend(["## Detailed indexes", "",
                   "- [`smoke_manifest.csv`](smoke_manifest.csv) enumerates every smoke case, swept descriptor, history length, and status.",
                   "- [`fit_audit.csv`](fit_audit.csv) enumerates every predicted and fitted rate, reconstructed fitting window, and invalid fit.",
-                  "- [`event_audit.csv`](event_audit.csv) enumerates every rank-loss, NaN, cycle, or divergence event and its serialized detail.", "",
+                  "- [`event_audit.csv`](event_audit.csv) enumerates every rank-loss, NaN, cycle, divergence, stagnation, or underflow event and its serialized detail.", "",
                   "## Manual identity checks", "",
                   *[f"- **{experiment} — {check}:** `{value:.17g}` ({note})." for experiment, check, value, note in identity_rows],
                   "- Hessian zero-factor rows correctly use absolute rather than relative residual semantics.",
@@ -166,19 +194,18 @@ def main() -> None:
                   "| Geometry of K_C | 601x601 minus origin; two 201x201 slices; 5,000 rejection attempts | 361,200 grid points + 80,802 slice points |",
                   "| Saddle escape | 11 epsilons; 3 steps; 2 signs | 66 trajectories |",
                   "| Step-size phase diagram | 3 spectra; 4 families; 5 seeds; per-initialization sorted union of 4 certificate multiples, 60 log points, 141 linear points, and 3 named steps | at most 12,480 trajectories before duplicate removal |",
-                  "| Initialization ablation | 3 stochastic groups x20; 40 controlled values x10 | 460 primary trajectories; required certified secondary subset is not implemented |", "",
-                  "The trajectory upper total is 14,556, plus 216 Hessian actions and the geometry evaluations. Experiment 7's exact post-deduplication total depends on each initialization's `eta_C`; the implementation currently uses exact set equality rather than the specification's relative `1e-12` duplicate tolerance.", "",
+                  "| Initialization ablation | 3 stochastic groups x20; 40 controlled values x10; three seed-zero certified checks | 463 trajectories |", "",
+                  "The pre-deduplication trajectory upper total is 14,559, plus 216 Hessian actions and the geometry evaluations. Experiment 7's exact post-deduplication total depends on each initialization's `eta_C`; the implementation removes duplicates with the specified relative `1e-12` tolerance.", "",
                   "## Runtime and storage estimate", "",
-                  f"The eight smoke JSON files occupy {total_bytes:,} bytes. Runtime was not serialized, so a defensible wall-clock estimate cannot be derived from these artifacts. A case-count-only storage extrapolation is also unsafe because full runs allow 20,000 iterations versus 50–120 in most smoke trajectories. Instrumenting elapsed time and serialized bytes per completed trajectory is required before approving a resource estimate.", "",
-                  "## Audit findings blocking full sweeps", "",
-                  "1. Rate fits serialize the number of usable points but not the first/last iteration of the fitting window.",
-                  "2. Geometry Part A omits the specified contour levels, critical-point overlays, and fixed-grid trajectories; Part C samples only one level and does not record Hessian norms or bound-to-empirical ratios.",
-                  "3. Tied-eigenvalue output omits canonical projector errors, final tied-block principal angles, and explicit rate/iteration summaries.",
-                  "4. Step-size output does not aggregate empirical monotone/convergence cutoffs or their ratios to `eta_C`, and duplicate removal is not relative-tolerance based.",
-                  "5. Initialization ablation omits the certified-step secondary subset, family success-rate summaries, and regression data (only its label is present).",
-                  "6. Run timing and output byte accounting are absent, preventing evidence-based runtime/storage estimates.",
-                  "7. Several smoke runs terminate through rank loss; those are useful pipeline events, not successful convergence cases.", "",
-                  "**Conclusion:** serialization and basic diagnostics execute, but the smoke artifacts expose specification-completeness gaps. Do not launch full sweeps until these gaps are implemented, retested, and re-smoked.", ""])
+                  f"The eight smoke JSON files occupy {total_bytes:,} bytes. Their measured in-process wrapper time totals {total_wrapper_seconds:.3f} seconds. Direct grid/case-count scaling gives a smoke-shaped lower planning estimate of {projected_wrapper_seconds/3600:.2f} hours for the full grids. The {total_records:,} iterative records across {total_runs} runs took {total_run_seconds:.3f} serialized per-run seconds and occupy {total_history_bytes:,} raw-history bytes. Scaling the observed average run to 14,559 trajectories gives approximately {total_run_seconds/max(1,total_runs)*14559/3600:.2f} trajectory-hours and {total_history_bytes/max(1,total_runs)*14559/1e9:.2f} GB. A deliberately conservative all-runs-hit-20,001-iterations bound is approximately {total_run_seconds/max(1,total_records)*14559*20001/3600:.1f} trajectory-hours and {total_history_bytes/max(1,total_records)*14559*20001/1e9:.1f} GB. These estimates exclude process startup and assume roughly linear per-case/per-record costs; they are planning bounds, not guarantees.", "",
+                  "## Readiness and remaining limitations", "",
+                  "1. Every fit now serializes its actual first/last usable iteration and an explicit invalid reason.",
+                  "2. Geometry records contour/critical-point/trajectory data, multiple levels, Hessian norms, extrema, and bound ratios.",
+                  "3. Tied cases record canonical errors, tied-block angles, rates, and iterations.",
+                  "4. Step-size cases record relative-deduplicated grids, late rates, and grid-dependent cutoff summaries and ratios.",
+                  "5. Initialization cases record certified checks, family success rates, fits, transients, and a structured exploratory regression (which may be invalid on a short smoke run).",
+                  "6. Rank loss, divergence, cycles, stagnation, and underflow remain valid observed outcomes and must not be relabelled as successes.", "",
+                  "**Conclusion:** the corrected smoke pipeline contains the specified raw outputs and summaries. Full sweeps still require explicit approval; smoke behavior is not an experimental conclusion.", ""])
     (OUT / "README.md").write_text("\n".join(lines), encoding="utf-8")
     for filename, rows, fields in (
         ("smoke_manifest.csv", manifest_rows, ["experiment", "case", "descriptor", "records", "termination"]),
