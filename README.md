@@ -111,6 +111,56 @@ Syntax-check all package and test modules without running experiments:
 python -m compileall -q src tests
 ```
 
+## Phase 2 wrappers
+
+The eight theorem-facing wrappers live in `experiments/` and default to the
+small smoke configurations.  Every wrapper requires an explicit raw JSON
+destination; for example:
+
+```bash
+python experiments/hessian_mode_isolation.py --output results/smoke/hessian.json
+```
+
+Passing `--full` is the explicit opt-in to the full sweep from
+`docs/phase2_experiment_spec.md`.  Wrappers store raw numerical records and
+reproducibility metadata only; plotting is intentionally separate.
+
+### Approved staged full sweeps
+
+The full Phase 2 grid is intentionally split into three sequential launchers.
+Choose one persistent run directory and inspect each completed stage before
+starting the next:
+
+```bash
+experiments/full/run_stage1.sh results/full/phase2-$(date -u +%Y%m%dT%H%M%SZ)
+experiments/full/run_stage2.sh results/full/phase2-YYYYMMDDTHHMMSSZ
+experiments/full/run_stage3.sh results/full/phase2-YYYYMMDDTHHMMSSZ
+```
+
+Replace the second and third example paths with the exact directory created for
+Stage 1. Stage 1 runs local rates, Hessian modes, and saddle escape; Stage 2
+runs boundary-gap scaling, tied eigenvalues, and initialization ablation;
+Stage 3 runs geometry and the step-size phase diagram.
+
+Each launcher runs sequentially and stops on the first failure. It records
+unaggregated JSON under `raw/`, append-only console output under `logs/`, SHA256
+files under `checksums/`, an environment snapshot, a tab-separated manifest,
+and a completion marker. Existing raw JSON is never overwritten. To resume a
+stage after a failure, rerun it with `--resume`; completed JSON is validated and
+skipped before execution continues:
+
+```bash
+experiments/full/run_stage2.sh results/full/phase2-YYYYMMDDTHHMMSSZ --resume
+```
+
+Do not run two stage launchers concurrently against the same directory. The
+scripts always pass `--full`; merely syntax-checking them does not launch an
+experiment:
+
+```bash
+bash -n experiments/full/_common.sh experiments/full/run_stage{1,2,3}.sh
+```
+
 Before working on the numerical implementation, read `AGENTS.md`,
 `docs/mathematical_reference.md`, `docs/experiment_implementation_spec.md`, and
 the living plan at `docs/plans/pgd_experiments.md`.
