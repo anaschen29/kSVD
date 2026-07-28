@@ -111,6 +111,20 @@ Syntax-check all package and test modules without running experiments:
 python -m compileall -q src tests
 ```
 
+## Phase 2 wrappers
+
+The eight theorem-facing wrappers live in `experiments/` and default to the
+small smoke configurations.  Every wrapper requires an explicit raw JSON
+destination; for example:
+
+```bash
+python experiments/hessian_mode_isolation.py --output results/smoke/hessian.json
+```
+
+Passing `--full` is the explicit opt-in to the full sweep from
+`docs/phase2_experiment_spec.md`.  Wrappers store raw numerical records and
+reproducibility metadata only; plotting is intentionally separate.
+
 Before working on the numerical implementation, read `AGENTS.md`,
 `docs/mathematical_reference.md`, `docs/experiment_implementation_spec.md`, and
 the living plan at `docs/plans/pgd_experiments.md`.
