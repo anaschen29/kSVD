@@ -114,6 +114,39 @@ Procrustes invariance, tied-cutoff geometry, and one-step certified descent.
 
 ## Results and retrospective
 
+Smoke-artifact audit (2026-07-28):
+
+- Fetched the public `main` branch and imported commit `8bb0cbf`, which contains
+  all eight unaggregated smoke JSON files.  No additional experiment, smoke
+  run, or full sweep was launched.
+- Added `tools/audit_phase2_smoke.py`, a standard-library-only, deterministic
+  auditor that rejects non-finite JSON constants and regenerates the manifest,
+  rate/fitting-window table, numerical-event table, and eight preliminary SVG
+  small-multiple dashboards under `results/smoke_audit/`.
+- The audit found no non-finite JSON values.  It found two intentional
+  `lost_rank` classifications in the condition-`1e8` initialization cases and
+  40 `cycle` classifications in the smoke step-size diagram, primarily because
+  extremely small certified steps are indistinguishable from a period-two
+  return at the configured float64 tolerance.
+- Manual artifact checks give maximum Hessian predicted/measured absolute error
+  `4.4408920985006255e-11`, exact saddle fixed-point error zero, and isotropic
+  column-space error `9.187143064855711e-16`.  The one-step isotropic Gram error
+  decreases from `22.075843090749594` to `5.141881656628448`; this is a sanity
+  observation, not a theorem verification.
+- The audit blocks full sweeps: fitting-window endpoints are not serialized;
+  geometry, tied-family, step-cutoff, and initialization-ablation outputs are
+  incomplete relative to `docs/phase2_experiment_spec.md`; runtime/byte timing
+  instrumentation is absent; and Experiment 7 does not implement relative-
+  tolerance grid deduplication.  The report records the exact proposed grids,
+  an upper total of 14,556 trajectories, 216 Hessian actions, and 442,002
+  geometry evaluations.  Runtime and full storage cannot be responsibly
+  estimated from artifacts that contain no elapsed-time measurements and use
+  much shorter iteration caps than the proposed full runs.
+- The complete local test command now passes: `python -m pytest -vv` reports
+  22 passed tests and one warning because optional NumPy is unavailable during
+  PyTorch initialization.  The audit itself reads the committed JSON and does
+  not rerun any numerical trajectory or sweep.
+
 Phase 2 validation (2026-07-27):
 
 - 2026-07-28 smoke follow-up: the condition-`1e8` initialization ablation
