@@ -54,6 +54,35 @@ energy outside the eligible block.
 
 ## Milestones and progress
 
+### Staged full-sweep launch scripts (current)
+
+- [x] Add reusable shell logging/manifest helpers and three dedicated stage
+  launchers matching the approved Phase 2 staging order.
+- [x] Make every launcher require an explicit destination, invoke wrappers with
+  `--full`, preserve one raw JSON and one console log per experiment, and stop
+  on failure without deleting completed artifacts.
+- [x] Add shell syntax/static tests and documentation.  Do not execute any
+  launcher or full experiment in this implementation environment.
+
+The user approved all Phase 2 full sweeps but explicitly requested scripts
+rather than execution.  Stage 1 contains predicted local rates, Hessian mode
+isolation, and saddle escape; Stage 2 contains boundary-gap scaling, tied
+eigenvalues, and initialization ablation; Stage 3 contains geometry of
+`K_C` and the step-size phase diagram.  Scripts will continue the existing raw
+JSON logging, add append-only console logs plus a run manifest, and use a common
+run directory so the user can inspect each stage before launching the next.
+Implemented `experiments/full/run_stage{1,2,3}.sh` and a shared `_common.sh`.
+The helper snapshots the environment and Git state, appends lifecycle rows to
+`manifest.tsv`, tees console output, validates `smoke=false` plus experiment
+identity and serialized byte count, writes SHA256 checksums, prevents overwrite,
+supports validated `--resume`, and uses a per-stage lock and completion marker.
+`bash -n experiments/full/_common.sh experiments/full/run_stage{1,2,3}.sh`
+passes, and `python -m pytest -vv` passes 28 tests with the existing optional-
+NumPy warning.  Static tests verify syntax, exact stage membership/order,
+explicit `--full`, overwrite protection, validation, checksums, and logging.
+No launcher, wrapper, smoke experiment, or full sweep was executed during this
+milestone.
+
 ### Phase 2 specification-completeness follow-up (current)
 
 - [x] Add per-run timing/size metadata, structured warnings, explicit
