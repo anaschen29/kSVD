@@ -89,7 +89,9 @@ with path.open(encoding="utf-8") as stream:
 metadata = document["metadata"]
 if metadata["smoke"] is not False:
     raise SystemExit("artifact is not a full-sweep result")
-if str(metadata["experiment"]).lower() != expected.lower():
+actual = str(metadata["experiment"]).lower()
+legacy_aliases = {"geometry_of_kc": {"geometry_of_k_c"}}
+if actual != expected.lower() and actual not in legacy_aliases.get(expected.lower(), set()):
     raise SystemExit(f"experiment mismatch: {metadata['experiment']} != {expected}")
 if metadata.get("serialized_bytes") != path.stat().st_size:
     raise SystemExit("serialized byte count does not match file size")
@@ -103,6 +105,7 @@ full_run_experiment() {
   if [[ -e $raw ]]; then
     if [[ $FULL_RESUME == true ]] && full_validate_raw "$raw" "$experiment"; then
       printf 'Skipping validated completed artifact: %s\n' "$raw"
+      sha256sum "$raw" >"$FULL_RUN_DIR/checksums/$experiment.sha256"
       full_record "$experiment" skipped 0 "$raw" "$log"
       return 0
     fi

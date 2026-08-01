@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+import json
 import subprocess
 
 
@@ -35,5 +36,34 @@ def test_full_sweep_common_script_preserves_raw_results_and_logs() -> None:
     assert "OMP_NUM_THREADS=1" in text
     assert "Refusing to overwrite existing artifact" in text
     assert "full_validate_raw" in text
+    assert '"geometry_of_kc": {"geometry_of_k_c"}' in text
     assert "sha256sum" in text
+    assert text.index('sha256sum "$raw"') < text.index('full_record "$experiment" skipped')
     assert "manifest.tsv" in text
+
+
+def test_full_sweep_validator_accepts_legacy_geometry_identifier(tmp_path) -> None:
+    path = tmp_path / "geometry_of_kc.json"
+    document = {
+        "metadata": {
+            "experiment": "geometry_of_K_C",
+            "smoke": False,
+            "serialized_bytes": 0,
+        }
+    }
+    for _ in range(3):
+        payload = json.dumps(document) + "\n"
+        document["metadata"]["serialized_bytes"] = len(payload.encode())
+    path.write_text(json.dumps(document) + "\n", encoding="utf-8")
+
+    subprocess.run(
+        [
+            "bash",
+            "-c",
+            'source "$1"; full_validate_raw "$2" geometry_of_kc',
+            "bash",
+            str(FULL / "_common.sh"),
+            str(path),
+        ],
+        check=True,
+    )

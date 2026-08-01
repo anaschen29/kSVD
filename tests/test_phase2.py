@@ -19,6 +19,7 @@ def test_hessian_mode_wrapper_matches_predictions() -> None:
 
 def test_geometry_wrapper_and_raw_serialization(tmp_path) -> None:
     result = ksvd.geometry_of_kc(smoke=True)
+    assert result["metadata"]["experiment"] == "geometry_of_kc"
     assert result["part_a"]["grid_size"] == 31
     assert len(result["part_a"]["contour_levels"]) == 3
     assert result["part_a"]["trajectories"]

@@ -54,6 +54,26 @@ energy outside the eligible block.
 
 ## Milestones and progress
 
+### Geometry artifact identifier compatibility (2026-08-01)
+
+- [x] Use the canonical wrapper/filename identifier `geometry_of_kc` in new
+  geometry metadata.
+- [x] Preserve completed full-sweep artifacts written with the legacy metadata
+  identifier `geometry_of_K_C` by accepting that one explicit alias during
+  launcher validation.
+- [x] Add regression checks; do not rerun any experiment.
+
+The Stage 3 launcher names the experiment and raw file `geometry_of_kc`, while
+the wrapper previously serialized `geometry_of_K_C`.  Case-folding cannot
+remove the additional underscore, so post-run validation rejected an otherwise
+complete artifact after 72.688 seconds.  The wrapper now emits the canonical
+identifier.  The validator deliberately accepts only the known legacy alias,
+rather than broadly normalizing identifiers and potentially masking genuine
+experiment mismatches.
+Validated resume now also writes or refreshes the artifact checksum before
+recording the skip, which covers the recovery path where the original run
+finished computation but failed identifier validation before checksumming.
+
 ### Simple CPU parallelism (current)
 
 - [x] Add an optional worker count to the Phase 2 CLI and use an ordered thread

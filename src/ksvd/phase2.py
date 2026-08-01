@@ -384,7 +384,7 @@ def geometry_of_kc(*, smoke: bool = True) -> dict[str, object]:
                 "empirical_min_lambda_min_A_over_a_C":None if not samples or cert.a_C==0 else extrema["min_lambda_min_A"]/cert.a_C,
                 "hessian_bound_C_over_empirical_max":None if not samples else cert.hessian_bound_C/extrema["max_hessian_operator_norm"]}
         levels.append({"C":C,"certificate":cert.to_dict(),"samples":samples,"empirical_extrema":extrema,"bound_to_empirical_ratios":ratios})
-    return {"metadata":_metadata("geometry_of_K_C",0,Phase2Config(max_steps=0),smoke),
+    return {"metadata":_metadata("geometry_of_kc",0,Phase2Config(max_steps=0),smoke),
             "part_a":{"grid_size":len(grid),"values":values,"C_star":c_star,
                       "contour_levels":[c_star+offset for offset in contour_offsets],
                       "global_minima":[[-1.,0.],[1.,0.]],"nonglobal_critical_points":[[0.,-1.],[0.,1.]],
