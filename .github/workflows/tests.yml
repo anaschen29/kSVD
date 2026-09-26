@@ -10,5 +10,9 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
+      - run: python -m pip install torch --index-url https://download.pytorch.org/whl/cpu
       - run: python -m pip install -e '.[test,precision]'
-      - run: pytest -q
+      - name: Test and log source fingerprint
+        run: |
+          pytest -q
+          python -c 'from ksvd.cli import source_digest; print("SOURCE_SHA256=" + source_digest())'
