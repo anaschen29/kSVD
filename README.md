@@ -7,6 +7,4 @@ descent for low-rank positive-semidefinite matrix approximation:
 g(X) = 1/4 ||M - XX^T||_F^2.
 ```
 
-The reusable numerical package lives in `src/ksvd`, and the mathematical and
-experimental specifications live in `docs/`.
-
+tbc...
