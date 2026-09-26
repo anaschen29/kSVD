@@ -1,0 +1,8 @@
+{
+  "trace_contraction": {"n": 12, "r": 8, "ks": [2], "mus": [0.2], "thetas": [0.2, 0.8], "etas": [0.5, 0.85], "gram_conditions": [1.0, 100.0], "null_mixes": [0.5], "seeds": [0], "max_steps": 180},
+  "power_sketch_entry": {"n": 12, "r": 8, "ks": [1, 2], "ratios": [0.5, 0.8], "trials": 32, "seed": 0, "q_max": 16, "theta": 0.5, "failure_probability": 0.1},
+  "eventual_rates": {"n": 8, "r": 6, "ks": [1, 2], "mus": [0.2], "etas": [0.5, 0.6666666666666666, 0.95], "modes": ["radial", "angular", "mixed"], "amplitudes": [0.01], "gaussian_seeds": [0], "max_steps": 280, "high_precision": false},
+  "minimizer_manifold": {"eta": 0.5, "splittings": [0.0, 0.1], "seeds": [0, 1, 2], "max_steps": 250},
+  "jedra_shah_rank1": {"n": 8, "r": 6, "mus": [0.2], "seeds": [0, 1], "overlaps": [0.01], "max_steps": 300},
+  "damping_stress": {"n": 8, "r": 6, "etas": [0.05, 0.5, 0.95], "seeds": [0], "max_steps": 180}
+}
