@@ -1,0 +1,8 @@
+{
+  "trace_contraction": {"n": 24, "r": 12, "ks": [2, 4], "mus": [0.1, 0.2, 0.5], "thetas": [0.2, 0.8], "etas": [0.5, 0.85], "gram_conditions": [1.0, 100.0], "null_mixes": [0.5], "seeds": [0, 1, 2], "max_steps": 1200},
+  "power_sketch_entry": {"n": 32, "r": 16, "ks": [1, 4], "ratios": [0.5, 0.8, 0.95], "trials": 256, "seed": 0, "q_max": null, "theta": 0.5, "failure_probability": 0.05},
+  "eventual_rates": {"n": 16, "r": 10, "ks": [1, 4], "mus": [0.05, 0.2, 0.5], "etas": [0.5, 0.6666666666666666, 0.95], "modes": ["radial", "angular", "mixed"], "amplitudes": [0.01], "gaussian_seeds": [0, 1, 2, 3, 4], "coupled_seeds": [0, 1, 2, 3, 4], "max_steps": 1600, "high_precision": false},
+  "minimizer_manifold": {"eta": 0.5, "splittings": [0.0, 0.1, 0.01], "seeds": [0, 1, 2, 3, 4], "max_steps": 3000},
+  "jedra_shah_rank1": {"n": 16, "r": 10, "mus": [0.05, 0.2, 0.5], "seeds": [0, 1, 2, 3, 4], "overlaps": [0.01, 0.0001], "max_steps": 1600},
+  "damping_stress": {"n": 16, "r": 10, "etas": [0.05, 0.5, 0.95, 0.99], "seeds": [0, 1, 2], "max_steps": 2000}
+}
