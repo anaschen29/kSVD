@@ -17,6 +17,7 @@ precision = ["mpmath>=1.3"]
 ksvd-run = "ksvd.cli:main"
 ksvd-plot = "ksvd.plotting:main"
 ksvd-summarize = "ksvd.summarize:main"
+ksvd-rankone-report = "ksvd.rankone_reporting:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]

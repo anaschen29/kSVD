@@ -68,7 +68,7 @@ def test_failure_does_not_inherit_previous_success(monkeypatch):
 
 def test_stationary_saddle_remains_unsuccessful():
     p = SpectralProblem.make([2., 1.])
-    result = run_trajectory(p, torch.tensor([[0.], [1.]]), RunConfig(coordinates='y'))
+    result = run_trajectory(p, torch.tensor([[0.], [1.]], dtype=p.lam.dtype), RunConfig(coordinates='y'))
     assert result['status'] == 'stagnated'
     assert not result['accuracy']['product_error']['ever_met']
     assert not result['accuracy']['product_error']['final_met']
@@ -110,7 +110,7 @@ def test_runner_does_not_modify_iterates_or_count_discarded_increment():
         nxt = reduced_step(p, y, .95)
         length += float((nxt-y).norm())
         y = nxt
-    torch.testing.assert_close(y, torch.tensor(result['final_state']), rtol=0, atol=0)
+    torch.testing.assert_close(y, torch.tensor(result['final_state'], dtype=y.dtype), rtol=0, atol=0)
     assert result['records'][-1]['cumulative_length'] == length
 
 
@@ -127,7 +127,7 @@ def test_coupled_start_is_dense_seeded_and_has_prescribed_norm(seed):
 
 def test_coupled_metrics_are_orbit_errors_not_point_limit_surrogates():
     p = SpectralProblem.make([1.5, 1., .8, .4])
-    rot = torch.tensor([[.6, -.8], [.8, .6]])
+    rot = torch.tensor([[.6, -.8], [.8, .6]], dtype=p.lam.dtype)
     y = p.frame(2) @ rot
     out = aligned_normal_metrics(p, y, p.to_x(y))
     assert out['orbit_error_y'] < 1e-14
