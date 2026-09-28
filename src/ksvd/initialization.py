@@ -89,3 +89,27 @@ def normal_start(p: SpectralProblem, k: int, mode: str, amplitude: float = .01) 
             raise ValueError("angular mode needs a strict positive-support cutoff")
         y[k, k-1] += amplitude
     return y
+
+
+def coupled_normal_start(p: SpectralProblem, k: int, amplitude: float = .01,
+                         seed: int = 0) -> Tensor:
+    """Dense multi-column normal perturbation in Y; not a rank-one embedding.
+
+    The symmetric top block and dense omitted block each have Frobenius norm
+    amplitude/sqrt(2). Thus ||Y0-E_star||_F=amplitude in exact arithmetic.
+    The small-radius restriction guarantees an invertible selected block.
+    No QR or normalization is subsequently applied to the evolving factor.
+    """
+    p.check_k(k)
+    if not 2 <= k < p.r or p.gap(k) <= 0:
+        raise ValueError("coupled normal starts require 2<=k<r and a strict cutoff gap")
+    if not math.isfinite(amplitude) or not 0 < amplitude < .25:
+        raise ValueError("coupled amplitude must be in (0, .25)")
+    gen = generator(seed, p.lam.device)
+    radial = torch.randn(k, k, generator=gen, dtype=p.lam.dtype, device=p.lam.device)
+    radial = (radial + radial.T)/2
+    angular = torch.randn(p.r-k, k, generator=gen, dtype=p.lam.dtype, device=p.lam.device)
+    y = p.frame(k).clone()
+    y[:k] += (amplitude/math.sqrt(2)) * radial/radial.norm()
+    y[k:] += (amplitude/math.sqrt(2)) * angular/angular.norm()
+    return y
